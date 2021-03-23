@@ -8,23 +8,27 @@ import {
 import {CryptOrchidERC721} from '../typechain';
 import {setupUser, setupUsers} from './utils';
 
-const RINKEBY_VRF_COORDINATOR = '0xb3dCcb4Cf7a26f6cf6B120Cf5A73875B7BBc655B';
-const RINKEBY_LINKTOKEN = '0x01be23585060835e02b77ef475b0cc51aa1e0709';
-const RINKEBY_KEYHASH =
-  '0x2ed0feb3e7fd2022120aa84fab1945545a9f2ffc9076fd6156fa96eaff4c1311';
-
+const keyhash = '0x6c3699283bda56ad74f6b855546325b68d482e983852a7a82979cc4807b641f4'
 
 const setup = deployments.createFixture(async () => {
   const [owner] = await ethers.getSigners();
 
+  const MockLink = await ethers.getContractFactory("MockLink")
+  const VRFCoordinatorMock = await ethers.getContractFactory("VRFCoordinatorMock")
+  const link = await MockLink.deploy()
+  const vrfCoordinatorMock = await VRFCoordinatorMock.deploy(link.address)
   const CryptOrchidERC721 = await ethers.getContractFactory("CryptOrchidERC721");
 
   const CryptOrchids = await CryptOrchidERC721.deploy(
-    RINKEBY_VRF_COORDINATOR, RINKEBY_LINKTOKEN, RINKEBY_KEYHASH
+    vrfCoordinatorMock.address, link.address, keyhash  
   );
+
+  await link.transfer(CryptOrchids.address, '2000000000000000000')
+
 
   const contracts = {
     CryptOrchidERC721: CryptOrchids,
+    VRFCoordinatorMock: vrfCoordinatorMock,
   };
 
   const users = await setupUsers(await getUnnamedAccounts(), contracts);
@@ -37,12 +41,54 @@ const setup = deployments.createFixture(async () => {
 });
 
 
-describe('CryptOrchidERC721', function () {
+describe('CryptOrchidERC721', function () {  
   it("Does not create any tokens on deployment", async function() {
     const { CryptOrchidERC721 } = await setup();
 
     expect(await CryptOrchidERC721.totalSupply()).to.equal(0);
   });
+
+  it("Random Number Should successfully make an external random number request", async () => {    
+    const { CryptOrchidERC721, VRFCoordinatorMock, users } = await setup();
+    const transaction = await users[0].CryptOrchidERC721.webMint(
+      Math.ceil(Math.random()),
+      { 
+        value: ethers.utils.parseUnits('0.01', 'ether'),
+        from: users[0].address,
+        gasLimit: 9500000
+      }
+    );
+
+    console.warn("testsender", users[0].address)
+      
+    const tx_receipt = await transaction.wait()
+
+    const topics = tx_receipt.events.reduce((acc, event) => (
+      [
+        ...acc,
+        ...event?.topics
+      ]
+    ), [])
+
+    console.warn(topics)
+
+    const requestId = tx_receipt.events[2].topics[0]
+
+    // await Promise.all(
+    //   topics.map(async (topic) => {
+    //     const contractSender = await CryptOrchidERC721.requestToSender(requestId)
+    //     console.log("sender found?", contractSender)
+    //   })
+    // )
+    // console.warn("requestId", requestId)
+    
+    const tx = await VRFCoordinatorMock.callBackWithRandomness(requestId, 777, CryptOrchidERC721.address)
+    
+    const ownedCount = await users[0].CryptOrchidERC721.balanceOf(users[0].address)
+    // const total = await users[0].CryptOrchidERC721.cryptorchids()
+      // console.warn(total)
+    expect(ownedCount).to.equal(1);
+  })
 
   // xit("Allows any user to mint via webMint", async function() {
   //   const { users, CryptOrchidERC721 } = await setup();
@@ -50,12 +96,12 @@ describe('CryptOrchidERC721', function () {
   //   const spy = chai.spy(CryptOrchidERC721.requestRandomness);
   //   CryptOrchidERC721.requestRandomness = spy;
 
-  //   const mintResult = await CryptOrchidERC721.webMint(
-  //     Math.ceil(Math.random()),
-  //     { 
-  //       value: ethers.utils.parseUnits('0.01', 'ether')
-  //     }
-  //   );
+    // const mintResult = await CryptOrchidERC721.webMint(
+    //   Math.ceil(Math.random()),
+    //   { 
+    //     value: ethers.utils.parseUnits('0.01', 'ether')
+    //   }
+    // );
 
   //   console.warn(mintResult.value.toNumber())
   //   expect(spy.to.have.beenCalled());
