@@ -98,8 +98,6 @@ contract CryptOrchidERC721 is ERC721PresetMinterPauserAutoId, WaterLevel, Ownabl
         uint256 randomKey = (randomNumber % 10000) + 1;
         SpeciesGeneratedMetdata memory metadata = buildSpeciesMetadata(randomKey);
 
-        waterLevel[cryptorchids.length] = 0;
-
         cryptorchids.push(
             CryptOrchid({
                 species: metadata.name,
@@ -114,16 +112,16 @@ contract CryptOrchidERC721 is ERC721PresetMinterPauserAutoId, WaterLevel, Ownabl
     }
 
     function alive(uint256 index, uint currentTime) public view returns (bool) {
-        uint256 wateringLevel = waterLevel[index];
+        uint256 currentWaterLevel = waterLevel[index];
         uint256 elapsed = currentTime - cryptorchids[index].plantedAt;
         uint fullCycles = uint(elapsed) / wateringPeriod;
         uint256 modulo = elapsed % wateringPeriod;
 
-        if (wateringLevel == fullCycles) {
+        if (currentWaterLevel == fullCycles) {
             return true;
         }
 
-        if (wateringLevel + 1 == fullCycles && modulo < wateringWindow) {
+        if (currentWaterLevel + 1 == fullCycles && modulo < wateringWindow) {
             return true;
         }
 
@@ -155,6 +153,31 @@ contract CryptOrchidERC721 is ERC721PresetMinterPauserAutoId, WaterLevel, Ownabl
         return "Watered Successfully!";
     }
 
+    // function metadataWater(uint256 index, uint currentTime) public returns (string memory) {
+    //     if (msg.sender != ownerOf(index)) {
+    //         return "Only the Owner can water a CryptOrchid.";
+    //     } 
+        
+    //     if (!alive(index, currentTime)) {
+    //         waterLevel[index] = 0;
+    //         return "This CryptOrchid wasn't watered in time and couldn't be saved";
+    //     }
+
+    //     uint256 wateringLevel = waterLevel[index];
+    //     uint256 elapsed = currentTime - cryptorchids[index].plantedAt;
+    //     uint fullCycles = uint(elapsed) / wateringPeriod;
+
+    //     if (wateringLevel > fullCycles) {
+    //         waterLevel[index] = 0;
+    //         return "You watered your CryptOrchid too soon!";
+    //     }
+
+    //     uint256 newWaterLevel = wateringLevel + 1;
+    //     waterLevel[index] = newWaterLevel;
+
+    //     return "Watered Successfully!";
+    // }
+
     function getTokenMetadata(uint256 tokenId)
         public
         view
@@ -176,96 +199,169 @@ contract CryptOrchidERC721 is ERC721PresetMinterPauserAutoId, WaterLevel, Ownabl
      * @param randomIndex uint256
      * @return randomMetadata SpeciesGeneratedMetdata
      */
-    function buildSpeciesMetadata(uint256 randomIndex) private pure returns (SpeciesGeneratedMetdata memory)  {
-        SpeciesRarity[10] memory speciesMap = [
-            SpeciesRarity({ 
-                maxIndex: 3074,
-                metadata: SpeciesGeneratedMetdata({
-                    name: "White Moth",
-                    latinName: "phalaenopsis micholitzii"
-                })
-            }),
-            SpeciesRarity({ 
-                maxIndex: 6074,
-                metadata: SpeciesGeneratedMetdata({
-                    name: "Orange Cattelya",
-                    latinName: "guarianthe aurantiaca"
-                } )
-            }),
-            SpeciesRarity({ 
-                maxIndex: 8074,
-                metadata: SpeciesGeneratedMetdata({
-                    name: "Blue Vanda",
-                    latinName: "vanda coerulea"
-                })
-            }),
+    // function buildSpeciesMetadata(uint256 randomIndex) internal pure returns (SpeciesGeneratedMetdata memory)  {
+    //     SpeciesRarity[10] memory speciesMap = [
+    //         SpeciesRarity({ 
+    //             maxIndex: 3074,
+    //             metadata: SpeciesGeneratedMetdata({
+    //                 name: "White Moth",
+    //                 latinName: "phalaenopsis micholitzii"
+    //             })
+    //         }),
+    //         SpeciesRarity({ 
+    //             maxIndex: 6074,
+    //             metadata: SpeciesGeneratedMetdata({
+    //                 name: "Orange Cattelya",
+    //                 latinName: "guarianthe aurantiaca"
+    //             } )
+    //         }),
+    //         SpeciesRarity({ 
+    //             maxIndex: 8074,
+    //             metadata: SpeciesGeneratedMetdata({
+    //                 name: "Blue Vanda",
+    //                 latinName: "vanda coerulea"
+    //             })
+    //         }),
 
-            SpeciesRarity({ 
-                maxIndex: 9074,
-                metadata: SpeciesGeneratedMetdata({
-                    name: "Yellow Lady's Slipper",
-                    latinName: "cypripedium calceolus"
-                })
-            }),
+    //         SpeciesRarity({ 
+    //             maxIndex: 9074,
+    //             metadata: SpeciesGeneratedMetdata({
+    //                 name: "Yellow Lady's Slipper",
+    //                 latinName: "cypripedium calceolus"
+    //             })
+    //         }),
 
-            SpeciesRarity({ 
-                maxIndex: 9574,
-                metadata: SpeciesGeneratedMetdata({
-                    name: "Vietnamese Paphiopedilum",
-                    latinName: "paphiopedilum vietnamense"
-                })
-            }),
+    //         SpeciesRarity({ 
+    //             maxIndex: 9574,
+    //             metadata: SpeciesGeneratedMetdata({
+    //                 name: "Vietnamese Paphiopedilum",
+    //                 latinName: "paphiopedilum vietnamense"
+    //             })
+    //         }),
 
-            SpeciesRarity({ 
-                maxIndex: 9824,
-                metadata: SpeciesGeneratedMetdata({
-                    name: "Kayasima Miltonia",
-                    latinName: "miltonia kayasimae"
-                })
-            }),
+    //         SpeciesRarity({ 
+    //             maxIndex: 9824,
+    //             metadata: SpeciesGeneratedMetdata({
+    //                 name: "Kayasima Miltonia",
+    //                 latinName: "miltonia kayasimae"
+    //             })
+    //         }),
       
-            SpeciesRarity({ 
-                maxIndex: 9924,
-                metadata: SpeciesGeneratedMetdata({
-                    name: "Hochstetter's Butterfly Orchid",
-                    latinName: "platanthera azorica"
-                })
-            }),
+    //         SpeciesRarity({ 
+    //             maxIndex: 9924,
+    //             metadata: SpeciesGeneratedMetdata({
+    //                 name: "Hochstetter's Butterfly Orchid",
+    //                 latinName: "platanthera azorica"
+    //             })
+    //         }),
 
-            SpeciesRarity({ 
-                maxIndex: 9974,
-                metadata: SpeciesGeneratedMetdata({
-                    name: "Ghost Orchid",
-                    latinName: "dendrophylax lindenii"
-                })
-            }),
+    //         SpeciesRarity({ 
+    //             maxIndex: 9974,
+    //             metadata: SpeciesGeneratedMetdata({
+    //                 name: "Ghost Orchid",
+    //                 latinName: "dendrophylax lindenii"
+    //             })
+    //         }),
 
-            SpeciesRarity({ 
-                maxIndex: 9999,
-                metadata: SpeciesGeneratedMetdata({
-                    name: "Gold of Kinabalu",
-                    latinName: "paphiopedilum rothschildianum"
-                })
-            }),
+    //         SpeciesRarity({ 
+    //             maxIndex: 9999,
+    //             metadata: SpeciesGeneratedMetdata({
+    //                 name: "Gold of Kinabalu",
+    //                 latinName: "paphiopedilum rothschildianum"
+    //             })
+    //         }),
 
-            SpeciesRarity({ 
-                maxIndex: 10000,
-                metadata: SpeciesGeneratedMetdata({
-                    name: "Shenzhen Nongke Orchid ",
-                    latinName: "shenzhenica orchidaceae"
-                })
-            })
-        ];
-        SpeciesGeneratedMetdata memory randomMetadata = speciesMap[0].metadata;
-        uint256 speciesMaxIndex = 3074;
+    //         SpeciesRarity({ 
+    //             maxIndex: 10000,
+    //             metadata: SpeciesGeneratedMetdata({
+    //                 name: "Shenzhen Nongke Orchid ",
+    //                 latinName: "shenzhenica orchidaceae"
+    //             })
+    //         })
+    //     ];
+
+    //     SpeciesGeneratedMetdata memory randomMetadata = speciesMap[0].metadata;
+    //     uint speciesMaxIndex = 3074;
         
-        uint256 index = 0;
-        while(randomIndex < speciesMaxIndex){
-            index++;
-            speciesMaxIndex = speciesMap[index].maxIndex;
-            randomMetadata = speciesMap[index].metadata;
-        }
+    //     uint index = 0;
+    //     while(randomIndex <= speciesMaxIndex){
+    //         index++;
+    //         randomMetadata = speciesMap[index].metadata;
+    //         speciesMaxIndex = speciesMap[index].maxIndex;
+    //     }
 
-        return randomMetadata;
+    //     return randomMetadata;
+    // }
+
+    function buildSpeciesMetadata(uint256 randomIndex) internal pure returns (SpeciesGeneratedMetdata memory)  {
+    //    if (randomIndex <= 3074) {
+           return SpeciesGeneratedMetdata({
+                name: "White Moth",
+                latinName: "phalaenopsis micholitzii"
+            });
+    //    }
+            
+        // if (randomIndex <= 6074) {
+        //    return SpeciesGeneratedMetdata({
+        //             name: "Orange Cattelya",
+        //             latinName: "guarianthe aurantiaca"
+        //         } );
+        // }
+
+        //  if (randomIndex <= 8074) {
+        //    return SpeciesGeneratedMetdata({
+        //             name: "Blue Vanda",
+        //             latinName: "vanda coerulea"
+        //         });
+        // }
+        
+        //  if (randomIndex <= 9074) {
+        //    return SpeciesGeneratedMetdata({
+        //             name: "Yellow Lady's Slipper",
+        //             latinName: "cypripedium calceolus"
+        //         });
+        // }
+
+        //  if (randomIndex <= 9574) {
+        //    return SpeciesGeneratedMetdata({
+        //         name: "Vietnamese Paphiopedilum",
+        //         latinName: "paphiopedilum vietnamense"
+        //     });
+        // }
+
+        // if (randomIndex <= 9824) {
+        //    return SpeciesGeneratedMetdata({
+        //         name: "Kayasima Miltonia",
+        //         latinName: "miltonia kayasimae"
+        //     });
+        // }
+
+        // if (randomIndex <= 9924) {
+        //     return SpeciesGeneratedMetdata({
+        //         name: "Hochstetter's Butterfly Orchid",
+        //         latinName: "platanthera azorica"
+        //     });
+        // }
+
+        // if (randomIndex <= 9974) {
+        //    return SpeciesGeneratedMetdata({
+        //         name: "Ghost Orchid",
+        //         latinName: "dendrophylax lindenii"
+        //     });
+        // }
+
+        // if (randomIndex <= 9999) {
+        //     return SpeciesGeneratedMetdata({
+        //         name: "Gold of Kinabalu",
+        //         latinName: "paphiopedilum rothschildianum"
+        //     });
+        // }
+
+        // if (randomIndex <= 10000) {
+        //    return SpeciesGeneratedMetdata({
+        //         name: "Shenzhen Nongke Orchid ",
+        //         latinName: "shenzhenica orchidaceae"
+        //     });
+        // }
     }
 }
