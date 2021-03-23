@@ -19,24 +19,27 @@ contract CryptOrchidERC721 is ERC721PresetMinterPauserAutoId, WaterLevel, Ownabl
    
     struct CryptOrchid {
         string species;
-        string latinSpecies;
         uint256 plantedAt;
     }
 
-    struct SpeciesGeneratedMetdata {
-        string name;
-        string latinName;
-    }
-
-    struct SpeciesRarity {
-        SpeciesGeneratedMetdata metadata;
-        uint256 maxIndex;
-    }
+    uint16[10] private limits = [3074, 6074, 8074, 9074, 9574, 9824, 9924, 9974, 9999, 10000];
+    string[10] private genum = [
+        "phalaenopsis micholitzii",
+        "guarianthe aurantiaca",
+        "vanda coerulea",
+        "cypripedium calceolus",
+        "paphiopedilum vietnamense",
+        "miltonia kayasimae",
+        "platanthera azorica",
+        "dendrophylax lindenii",
+        "paphiopedilum rothschildianum",
+        "shenzhenica orchidaceae"
+    ];
     
     CryptOrchid[] public cryptorchids;
     Counters.Counter private _tokenIds;
-    uint256 private wateringPeriod = 300; // 5 minutes
-    uint256 private wateringWindow = 60; // 1 minute
+    uint256 private wateringPeriod = 18000; // 60 minutes
+    uint256 private wateringWindow = 300; // 5 minutes
     address payable public creator;
 
     bytes32 internal keyHash;
@@ -87,7 +90,7 @@ contract CryptOrchidERC721 is ERC721PresetMinterPauserAutoId, WaterLevel, Ownabl
             "Not enough LINK - fill contract with faucet"
         );
 
-        bytes32 requestId = requestRandomness(keyHash, vrfFee, userProvidedSeed);
+        requestId = requestRandomness(keyHash, vrfFee, userProvidedSeed);
 
         requestToSender[requestId] = _addr;
         requestToPlantedAt[requestId] = block.timestamp;
@@ -99,15 +102,10 @@ contract CryptOrchidERC721 is ERC721PresetMinterPauserAutoId, WaterLevel, Ownabl
         internal
         override
     {
-        console.log("random", randomness);
-
         uint256 randomKey = (randomness % 10000) + 1;
-        SpeciesGeneratedMetdata memory metadata = buildSpeciesMetadata(randomKey);
-        
         cryptorchids.push(
             CryptOrchid({
-                species: metadata.name,
-                latinSpecies: metadata.latinName,
+                species: pickSpecies(randomKey),
                 plantedAt: requestToPlantedAt[requestId]
             })
         );
@@ -164,86 +162,25 @@ contract CryptOrchidERC721 is ERC721PresetMinterPauserAutoId, WaterLevel, Ownabl
         view
         returns (
             string memory,
-            string memory,
             uint256
         )
     {
         return (
             cryptorchids[tokenId].species,
-            cryptorchids[tokenId].latinSpecies,
             cryptorchids[tokenId].plantedAt
         );
     }
 
-    function buildSpeciesMetadata(uint256 randomIndex) internal view returns (SpeciesGeneratedMetdata memory)  {
-       if (randomIndex <= 3074) {
-           return SpeciesGeneratedMetdata({
-                name: "White Moth",
-                latinName: "phalaenopsis micholitzii"
-            });
-       }
-            
-        if (randomIndex <= 6074) {
-           return SpeciesGeneratedMetdata({
-                    name: "Orange Cattelya",
-                    latinName: "guarianthe aurantiaca"
-                } );
-        }
-
-         if (randomIndex <= 8074) {
-           return SpeciesGeneratedMetdata({
-                    name: "Blue Vanda",
-                    latinName: "vanda coerulea"
-                });
-        }
-        
-         if (randomIndex <= 9074) {
-           return SpeciesGeneratedMetdata({
-                    name: "Yellow Lady's Slipper",
-                    latinName: "cypripedium calceolus"
-                });
-        }
-
-         if (randomIndex <= 9574) {
-           return SpeciesGeneratedMetdata({
-                name: "Vietnamese Paphiopedilum",
-                latinName: "paphiopedilum vietnamense"
-            });
-        }
-
-        if (randomIndex <= 9824) {
-           return SpeciesGeneratedMetdata({
-                name: "Kayasima Miltonia",
-                latinName: "miltonia kayasimae"
-            });
-        }
-
-        if (randomIndex <= 9924) {
-            return SpeciesGeneratedMetdata({
-                name: "Hochstetter's Butterfly Orchid",
-                latinName: "platanthera azorica"
-            });
-        }
-
-        if (randomIndex <= 9974) {
-           return SpeciesGeneratedMetdata({
-                name: "Ghost Orchid",
-                latinName: "dendrophylax lindenii"
-            });
-        }
-
-        if (randomIndex <= 9999) {
-            return SpeciesGeneratedMetdata({
-                name: "Gold of Kinabalu",
-                latinName: "paphiopedilum rothschildianum"
-            });
-        }
-
-        if (randomIndex <= 10000) {
-           return SpeciesGeneratedMetdata({
-                name: "Shenzhen Nongke Orchid ",
-                latinName: "shenzhenica orchidaceae"
-            });
+    /**
+     * @notice Pick species for random number index
+     * @param randomIndex uint256
+     * @return species string
+     */
+    function pickSpecies(uint256 randomIndex) private view returns (string memory)  {
+        for (uint i=0; i<10; i++) {
+            if(randomIndex <= limits[i]) {
+                return genum[i];
+            }
         }
     }
 }
