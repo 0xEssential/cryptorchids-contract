@@ -9,7 +9,7 @@ import {node_url, accounts} from './utils/network';
 
 const config: HardhatUserConfig = {
   solidity: {
-    version: '0.7.1',
+    version: '0.6.6',
   },
   namedAccounts: {
     deployer: 0,
