@@ -1,0 +1,23 @@
+{
+  "name": "Shenzhen Nongke Orchid",
+  "description": "shenzhenica orchidaceae",
+  "image": "ipfs://QmTsn6ee4aWbp1coe3QNwNTzwNwJioWEXF5RL4vqTgWzYR",
+  "attributes": [
+    {
+      "trait_type": "Species", 
+      "value": "Shenzhen Nongke Orchid"
+    }, 
+    {
+      "trait_type": "Latin Species", 
+      "value": "shenzhenica orchidaceae"
+    }, 
+    {
+      "trait_type": "Rarity", 
+      "value": "Legendary"
+    },
+    {
+      "trait_type": "Bulbs per 10k", 
+      "value": 1
+    }
+  ]
+}

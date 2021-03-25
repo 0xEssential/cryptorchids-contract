@@ -1,0 +1,23 @@
+{
+  "name": "Vietnamese Paphiopedilum",
+  "description": "paphiopedilum vietnamense",
+  "image": "ipfs://QmdrzRp6y8TkEcq1rPijGcGpPFfouh87x9nfyAYyvAbQaz",
+  "attributes": [
+    {
+      "trait_type": "Species", 
+      "value": "Vietnamese Paphiopedilum"
+    }, 
+    {
+      "trait_type": "Latin Species", 
+      "value": "paphiopedilum vietnamense"
+    }, 
+    {
+      "trait_type": "Rarity", 
+      "value": "Rare"
+    },
+    {
+      "trait_type": "Bulbs per 10k", 
+      "value": 500
+    }
+  ]
+}

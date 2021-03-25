@@ -1,0 +1,23 @@
+{
+  "name": "Orange Cattelya",
+  "description": "guarianthe aurantiaca",
+  "image": "ipfs://QmRzyCkPZ3SD6nnAWwX1sVQqxvvux2ocg59roxiyrP8hnp",
+  "attributes": [
+    {
+      "trait_type": "Species", 
+      "value": "Orange Cattelya"
+    }, 
+    {
+      "trait_type": "Latin Species", 
+      "value": "guarianthe aurantiaca"
+    }, 
+    {
+      "trait_type": "Rarity", 
+      "value": "Common"
+    },
+    {
+      "trait_type": "Bulbs per 10k", 
+      "value": 3000
+    }
+  ]
+}

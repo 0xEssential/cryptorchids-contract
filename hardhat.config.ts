@@ -4,6 +4,7 @@ import 'hardhat-deploy';
 import 'hardhat-deploy-ethers';
 import 'hardhat-gas-reporter';
 import '@typechain/hardhat';
+import '@nomiclabs/hardhat-etherscan'
 import 'solidity-coverage';
 import {node_url, accounts} from './utils/network';
 
@@ -14,6 +15,9 @@ const config: HardhatUserConfig = {
   namedAccounts: {
     deployer: 0,
     simpleERC20Beneficiary: 1,
+  },
+  etherscan: {
+    apiKey: process.env.ETHERSCAN_API_KEY,
   },
   networks: {
     hardhat: {

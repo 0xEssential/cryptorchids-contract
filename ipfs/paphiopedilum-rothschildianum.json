@@ -1,0 +1,23 @@
+{
+  "name": "Gold of Kinabalu",
+  "description": "paphiopedilum rothschildianum",
+  "image": "ipfs://QmQXQz9ChRNhUP6cpCVix1somwXWFEdpDwceCCLZ3BGhw9",
+  "attributes": [
+    {
+      "trait_type": "Species", 
+      "value": "Gold of Kinabalu"
+    }, 
+    {
+      "trait_type": "Latin Species", 
+      "value": "paphiopedilum rothschildianum"
+    }, 
+    {
+      "trait_type": "Rarity", 
+      "value": "Legendary"
+    },
+    {
+      "trait_type": "Bulbs per 10k", 
+      "value": 25
+    }
+  ]
+}

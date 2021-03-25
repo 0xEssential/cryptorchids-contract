@@ -26,6 +26,14 @@ export function node_url(networkName: string): string {
   return uri;
 }
 
+export function chainlinkEnv(networkName: string): Record<string,string> {
+  return {
+    VRF_COORDINATOR: process.env[networkName.toUpperCase() + '_VRF_COORDINATOR'],
+    LINKTOKEN: process.env[networkName.toUpperCase() + '_LINKTOKEN'],
+    KEYHASH: process.env[networkName.toUpperCase() + '_KEYHASH'],
+  }
+}
+
 export function getMnemonic(networkName?: string): string {
   if (networkName) {
     const mnemonic = process.env['MNEMONIC_' + networkName.toUpperCase()];

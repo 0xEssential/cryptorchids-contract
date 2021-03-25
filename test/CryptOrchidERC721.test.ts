@@ -48,7 +48,7 @@ describe('CryptOrchidERC721', function () {
     expect(await CryptOrchidERC721.totalSupply()).to.equal(0);
   });
 
-  it("Random Number Should successfully make an external random number request", async () => {    
+  xit("Random Number Should successfully make an external random number request", async () => {    
     const { CryptOrchidERC721, VRFCoordinatorMock, users } = await setup();
     const transaction = await users[0].CryptOrchidERC721.webMint(
       Math.ceil(Math.random()),
@@ -90,24 +90,25 @@ describe('CryptOrchidERC721', function () {
     expect(ownedCount).to.equal(1);
   })
 
-  // xit("Allows any user to mint via webMint", async function() {
-  //   const { users, CryptOrchidERC721 } = await setup();
+  it("Allows an owner to water", async function() {
+    const { users, CryptOrchidERC721 } = await setup();
 
-  //   const spy = chai.spy(CryptOrchidERC721.requestRandomness);
-  //   CryptOrchidERC721.requestRandomness = spy;
+    const transaction = await users[0].CryptOrchidERC721.webMint(
+      Math.ceil(Math.random()),
+      { 
+        value: ethers.utils.parseUnits('0.01', 'ether'),
+        from: users[0].address,
+        gasLimit: 9500000
+      }
+    );
 
-    // const mintResult = await CryptOrchidERC721.webMint(
-    //   Math.ceil(Math.random()),
-    //   { 
-    //     value: ethers.utils.parseUnits('0.01', 'ether')
-    //   }
-    // );
+    await transaction.wait()
+    const now = new Date().getTime() * 1000
+    const watering  = await users[0].CryptOrchidERC721.water(1, now);
+    console.log(watering)
+  });
 
-  //   console.warn(mintResult.value.toNumber())
-  //   expect(spy.to.have.beenCalled());
-  // });
-
-  describe('buildSpeciesMetadata', function () {
+  xdescribe('buildSpeciesMetadata', function () {
     it("Returns moth orchid for randomNumber <= 3074", async function() {
       const { CryptOrchidERC721 } = await setup();
       

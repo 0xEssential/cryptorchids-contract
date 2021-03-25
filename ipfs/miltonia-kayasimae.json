@@ -1,0 +1,23 @@
+{
+  "name": "Kayasima Miltonia",
+  "description": "miltonia kayasimae",
+  "image": "ipfs://QmeBswNjkgh6XqyN2L9to7EjXoBagynX5daPVDptSDefuP",
+  "attributes": [
+    {
+      "trait_type": "Species", 
+      "value": "Kayasima Miltonia"
+    }, 
+    {
+      "trait_type": "Latin Species", 
+      "value": "miltonia kayasimae"
+    }, 
+    {
+      "trait_type": "Rarity", 
+      "value": "Rare"
+    },
+    {
+      "trait_type": "Bulbs per 10k", 
+      "value": 250
+    }
+  ]
+}
