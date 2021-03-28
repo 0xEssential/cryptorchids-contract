@@ -1,5 +1,4 @@
 import chai, {expect} from './chai-setup';
-import sinon from "sinon";
 import { chunk } from 'lodash';
 import {
   ethers,
@@ -130,7 +129,6 @@ describe('CryptOrchidERC721', function () {
 
     describe("Token functionality", () => {
       let tokenId;
-      let clock;
       let GROWTH_CYCLE_MS;
       let WATERING_WINDOW_MS;
 
