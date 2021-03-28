@@ -47,6 +47,7 @@
     "mocha": "^8.1.1",
     "prettier": "^2.0.5",
     "prettier-plugin-solidity": "^1.0.0-alpha.57",
+    "sinon": "^10.0.0",
     "solhint": "^3.3.1",
     "solhint-plugin-prettier": "^0.0.5",
     "solidity-coverage": "^0.7.15",

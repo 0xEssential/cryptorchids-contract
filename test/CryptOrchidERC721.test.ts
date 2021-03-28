@@ -1,4 +1,5 @@
 import chai, {expect} from './chai-setup';
+import sinon from "sinon";
 import { chunk } from 'lodash';
 import {
   ethers,
@@ -18,7 +19,8 @@ const setup = deployments.createFixture(async () => {
   const VRFCoordinatorMock = await ethers.getContractFactory("VRFCoordinatorMock")
   const link = await MockLink.deploy()
   const vrfCoordinatorMock = await VRFCoordinatorMock.deploy(link.address)
-  const CryptOrchidERC721 = await ethers.getContractFactory("CryptOrchidERC721");
+
+  const CryptOrchidERC721 = await ethers.getContractFactory("CryptOrchidsMock");
 
   const CryptOrchids = await CryptOrchidERC721.deploy(
     vrfCoordinatorMock.address, link.address, keyhash  
@@ -102,7 +104,7 @@ describe('CryptOrchidERC721', function () {
 
       const pseudoRandom = Math.floor(Math.random() * (10_000 - 1));
 
-      await Promise.all(requestIds.map(async (requestId) => (
+      return Promise.all(requestIds.map(async (requestId) => (
         await mockedCoordinator.callBackWithRandomness(
           requestId, pseudoRandom, cryptorchidsContract.address
         )
@@ -125,30 +127,65 @@ describe('CryptOrchidERC721', function () {
 
       // expect(await CryptOrchidERC721.buildSpeciesMetadata(randomNumber)).to.equal(0);
     });
-  })
-  describe("Token functionality", async () => {
+
+    describe("Token functionality", () => {
+      let tokenId;
+      let clock;
+      let GROWTH_CYCLE_MS;
+      let WATERING_WINDOW_MS;
+
+      before(async () => {
+        const cycle = await cryptorchidsContract.GROWTH_CYCLE();
+        const wateringWindow = await cryptorchidsContract.WATERING_WINDOW();
+        
+        GROWTH_CYCLE_MS = cycle.mul(1000)
+        WATERING_WINDOW_MS = wateringWindow.mul(1000)
+        
+        
+        await webMint(1);
+
+        tokenId = await cryptorchidsContract.tokenOfOwnerByIndex(account.address, 0);
+      })
+
+      describe('alive()', () => {
+        it('returns true when a plant is alive less time than GROWTH_CYCLE', async() => {
+          const alive = await cryptorchidsContract.alive(tokenId - 1);
+          expect(alive).to.eq(true)
+        });
+
+        it('returns true when a plant is in WATERING_WINDOW', async() => {
+          await(cryptorchidsContract.timeTravel(GROWTH_CYCLE_MS.add((WATERING_WINDOW_MS).sub(60_000)).div(1000)));
+
+          const alive = await cryptorchidsContract.alive(tokenId - 1);
+          expect(alive).to.eq(true)
+        });
+
+        it('returns false when a plant is past WATERING_WINDOW', async() => {
+          await(cryptorchidsContract.timeTravel(GROWTH_CYCLE_MS.add((WATERING_WINDOW_MS).add(60_000)).div(1000)));
+
+          const alive = await cryptorchidsContract.alive(tokenId - 1);
+          expect(alive).to.eq(false)
+        });
+      });
+  
+  
+      xit("Allows an owner to water", async function() {
+        const { users } = await setup();
     
-    // describe('alive()', async() => {
-
-    // });
-
-
-    it("Allows an owner to water", async function() {
-      const { users } = await setup();
-  
-      const transaction = await users[0].CryptOrchidERC721.webMint(
-        Math.ceil(Math.random()),
-        { 
-          value: ethers.utils.parseUnits('0.01', 'ether'),
-          from: users[0].address,
-          gasLimit: BigNumber.from(9500000)
-        }
-      );
-  
-      await transaction.wait()
-      const now = new Date().getTime() * 1000
-      const watering  = await users[0].CryptOrchidERC721.water(1, now);
-      console.log(watering)
-    });
+        const transaction = await users[0].CryptOrchidERC721.webMint(
+          Math.ceil(Math.random()),
+          { 
+            value: ethers.utils.parseUnits('0.01', 'ether'),
+            from: users[0].address,
+            gasLimit: BigNumber.from(9500000)
+          }
+        );
+    
+        await transaction.wait()
+        const now = new Date().getTime() * 1000
+        const watering  = await users[0].CryptOrchidERC721.water(1, now);
+        console.log(watering)
+      });
+    })
   })
 });

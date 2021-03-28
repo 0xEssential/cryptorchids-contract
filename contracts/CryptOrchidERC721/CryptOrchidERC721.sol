@@ -7,12 +7,13 @@ import "@chainlink/contracts/src/v0.6/VRFConsumerBase.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/presets/ERC721PresetMinterPauserAutoId.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
+import "../Libraries/CurrentTime.sol";
 
 contract WaterLevel {
     mapping (uint256 => uint256) public waterLevel;
 }
 
-contract CryptOrchidERC721 is ERC721PresetMinterPauserAutoId, WaterLevel, Ownable, VRFConsumerBase {
+contract CryptOrchidERC721 is ERC721PresetMinterPauserAutoId, WaterLevel, Ownable, VRFConsumerBase, CurrentTime {
     using SafeMathChainlink for uint256;
     using Strings for string;
     using Counters for Counters.Counter;
@@ -145,7 +146,7 @@ contract CryptOrchidERC721 is ERC721PresetMinterPauserAutoId, WaterLevel, Ownabl
         requestId = requestRandomness(keyHash, vrfFee, userProvidedSeed);
 
         requestToSender[requestId] = _addr;
-        requestToPlantedAt[requestId] = block.timestamp;
+        requestToPlantedAt[requestId] = currentTime();
         
         emit RequestedRandomness(requestId);
     }
@@ -173,7 +174,7 @@ contract CryptOrchidERC721 is ERC721PresetMinterPauserAutoId, WaterLevel, Ownabl
 
     function alive(uint256 index) public view returns (bool) {
         uint256 currentWaterLevel = waterLevel[index];
-        uint256 elapsed = now - cryptorchids[index].plantedAt;
+        uint256 elapsed = currentTime() - cryptorchids[index].plantedAt;
         uint fullCycles = SafeMathChainlink.div(uint(elapsed), GROWTH_CYCLE);
         uint256 modulo = SafeMathChainlink.mod(elapsed, GROWTH_CYCLE);
 
@@ -199,7 +200,7 @@ contract CryptOrchidERC721 is ERC721PresetMinterPauserAutoId, WaterLevel, Ownabl
         }
 
         uint256 wateringLevel = waterLevel[index];
-        uint256 elapsed = now - cryptorchids[index].plantedAt;
+        uint256 elapsed = currentTime() - cryptorchids[index].plantedAt;
         uint fullCycles = SafeMathChainlink.div(uint(elapsed), GROWTH_CYCLE);
 
         if (wateringLevel > fullCycles) {
