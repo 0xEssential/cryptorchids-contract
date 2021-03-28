@@ -71,7 +71,7 @@ describe('CryptOrchidERC721', function () {
     expect(compareAsc(wateringEnd, expectedWateringEnd)).to.equal(0);
   });
 
-  describe.only('webMint', function () {
+  describe('webMint', function () {
     const maxUnits = 20;
     const minUnits = 1;
     let requestIds = [];
