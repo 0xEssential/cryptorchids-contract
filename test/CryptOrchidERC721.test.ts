@@ -221,36 +221,91 @@ describe('CryptOrchidERC721', function () {
         );
       });
 
-      describe('alive()', () => {
-        it('returns true when a plant is alive less time than GROWTH_CYCLE', async () => {
-          const alive = await cryptorchidsContract.alive(tokenId - 1);
-          expect(alive).to.eq(true);
-        });
-
-        it('returns true when a plant is in WATERING_WINDOW', async () => {
-          await cryptorchidsContract.timeTravel(
-            GROWTH_CYCLE_MS.add(WATERING_WINDOW_MS.sub(60_000)).div(1000)
-          );
-
-          const alive = await cryptorchidsContract.alive(tokenId - 1);
-          expect(alive).to.eq(true);
-        });
-
-        it('returns false when a plant is past WATERING_WINDOW', async () => {
-          await cryptorchidsContract.timeTravel(
-            GROWTH_CYCLE_MS.add(WATERING_WINDOW_MS.add(60_000)).div(1000)
-          );
-
-          const alive = await cryptorchidsContract.alive(tokenId - 1);
-          expect(alive).to.eq(false);
-        });
+      it('returns true when a plant is alive less time than GROWTH_CYCLE', async () => {
+        const alive = await cryptorchidsContract.alive(tokenId - 1);
+        expect(alive).to.eq(true);
       });
 
-      it('Allows an owner to water', async function () {
+      it('returns true when a plant is in first WATERING_WINDOW', async () => {
+        await cryptorchidsContract.timeTravel(
+          GROWTH_CYCLE_MS.add(WATERING_WINDOW_MS.sub(60_000)).div(1000)
+        );
+
+        const alive = await cryptorchidsContract.alive(tokenId - 1);
+        expect(alive).to.eq(true);
+      });
+
+      it('returns false when a plant is past first WATERING_WINDOW', async () => {
+        await cryptorchidsContract.timeTravel(
+          GROWTH_CYCLE_MS.add(WATERING_WINDOW_MS.add(60_000)).div(1000)
+        );
+
+        const alive = await cryptorchidsContract.alive(tokenId - 1);
+        expect(alive).to.eq(false);
+      });
+
+      it('returns true when a plant is in second WATERING_WINDOW', async () => {
+        await cryptorchidsContract.timeTravel(
+          GROWTH_CYCLE_MS.add(WATERING_WINDOW_MS.sub(60_000)).div(1000)
+        );
+
+        // Water during first watering window
         const transaction = await account.CryptOrchidERC721.water(tokenId);
         transaction.wait();
-        const waterLevel = await cryptorchidsContract.waterLevel(0);
+
+        const waterLevel = await cryptorchidsContract.waterLevel(tokenId - 1);
         expect(waterLevel).to.eq(1);
+
+        // move ahead to second window
+        await cryptorchidsContract.timeTravel(
+          GROWTH_CYCLE_MS.add(WATERING_WINDOW_MS.mul(2)).div(1000)
+        );
+
+        const alive = await cryptorchidsContract.alive(tokenId - 1);
+        expect(alive).to.eq(true);
+      });
+
+      it('returns true when a plant is in third WATERING_WINDOW', async () => {
+        await cryptorchidsContract.timeTravel(
+          GROWTH_CYCLE_MS.add(WATERING_WINDOW_MS.sub(60_000)).div(1000)
+        );
+
+        // Water during first watering window
+        const transaction = await account.CryptOrchidERC721.water(tokenId);
+        transaction.wait();
+
+        const waterLevel = await cryptorchidsContract.waterLevel(tokenId - 1);
+        expect(waterLevel).to.eq(1);
+        
+        // move ahead to second window
+        await cryptorchidsContract.timeTravel(
+          (GROWTH_CYCLE_MS.mul(2)).add(WATERING_WINDOW_MS.sub(60_000)).div(1000)
+        );
+
+        // Water during second watering window
+        const secondTransaction = await account.CryptOrchidERC721.water(tokenId);
+        secondTransaction.wait();
+
+        const waterLevelTwo = await cryptorchidsContract.waterLevel(tokenId - 1);
+        expect(waterLevelTwo).to.eq(2);
+
+        // Move ahead to third window
+        await cryptorchidsContract.timeTravel(
+          (GROWTH_CYCLE_MS.mul(3)).add(WATERING_WINDOW_MS.sub(60_000)).div(1000)
+        );
+        const alive = await cryptorchidsContract.alive(tokenId - 1);
+        expect(alive).to.eq(true);
+      });
+
+      it('Increases water level when owner calls water function', async function () {
+        const transaction = await account.CryptOrchidERC721.water(tokenId);
+        transaction.wait();
+        const waterLevel = await cryptorchidsContract.waterLevel(tokenId - 1);
+        expect(waterLevel).to.eq(1);
+      });
+
+      it('Throws when non-owner calls water function', async function () {
+        expect(async () => await cryptorchidsContract.water(tokenId)).to.throw;
       });
     });
   });

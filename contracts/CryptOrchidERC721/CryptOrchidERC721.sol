@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 pragma solidity >=0.6.6 <0.9.0;
-//import "hardhat/console.sol";
+import "hardhat/console.sol";
 
 import "@chainlink/contracts/src/v0.6/VRFConsumerBase.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -189,6 +189,7 @@ contract CryptOrchidERC721 is ERC721PresetMinterPauserAutoId, WaterLevel, Ownabl
         uint256 index = SafeMathChainlink.sub(tokenId, 1);
 
         if (!alive(index)) {
+            console.log("DEAD");
             burn(tokenId);
             emit Composted(tokenId);
             return;
@@ -199,6 +200,7 @@ contract CryptOrchidERC721 is ERC721PresetMinterPauserAutoId, WaterLevel, Ownabl
         uint256 fullCycles = SafeMathChainlink.div(uint256(elapsed), GROWTH_CYCLE);
 
         if (wateringLevel > fullCycles) {
+            console.log("OVERWATERED");
             burn(tokenId);
             emit OverWatered(SafeMathChainlink.add(index, 1));
             return;
