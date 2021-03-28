@@ -276,22 +276,26 @@ describe('CryptOrchidERC721', function () {
 
         const waterLevel = await cryptorchidsContract.waterLevel(tokenId - 1);
         expect(waterLevel).to.eq(1);
-        
+
         // move ahead to second window
         await cryptorchidsContract.timeTravel(
-          (GROWTH_CYCLE_MS.mul(2)).add(WATERING_WINDOW_MS.sub(60_000)).div(1000)
+          GROWTH_CYCLE_MS.mul(2).add(WATERING_WINDOW_MS.sub(60_000)).div(1000)
         );
 
         // Water during second watering window
-        const secondTransaction = await account.CryptOrchidERC721.water(tokenId);
+        const secondTransaction = await account.CryptOrchidERC721.water(
+          tokenId
+        );
         secondTransaction.wait();
 
-        const waterLevelTwo = await cryptorchidsContract.waterLevel(tokenId - 1);
+        const waterLevelTwo = await cryptorchidsContract.waterLevel(
+          tokenId - 1
+        );
         expect(waterLevelTwo).to.eq(2);
 
         // Move ahead to third window
         await cryptorchidsContract.timeTravel(
-          (GROWTH_CYCLE_MS.mul(3)).add(WATERING_WINDOW_MS.sub(60_000)).div(1000)
+          GROWTH_CYCLE_MS.mul(3).add(WATERING_WINDOW_MS.sub(60_000)).div(1000)
         );
         const alive = await cryptorchidsContract.alive(tokenId - 1);
         expect(alive).to.eq(true);
