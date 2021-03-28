@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 pragma solidity >=0.6.6 <0.9.0;
+//import "hardhat/console.sol";
 
 import "@chainlink/contracts/src/v0.6/VRFConsumerBase.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -21,6 +22,9 @@ contract CryptOrchidERC721 is ERC721PresetMinterPauserAutoId, WaterLevel, Ownabl
         uint256 plantedAt;
     }
     uint public constant MAX_CRYPTORCHIDS = 10000;
+    uint256 public constant GROWTH_CYCLE = 10800; // 3 hours
+    uint256 public constant WATERING_WINDOW = 3600; // 1 hour
+    
     uint16[10] private limits = [3074, 6074, 8074, 9074, 9574, 9824, 9924, 9974, 9999, 10000];
     string[10] private genum = [
         "phalaenopsis micholitzii",
@@ -50,8 +54,7 @@ contract CryptOrchidERC721 is ERC721PresetMinterPauserAutoId, WaterLevel, Ownabl
 
     CryptOrchid[] public cryptorchids;
     Counters.Counter private _tokenIds;
-    uint256 private wateringPeriod = 18000; // 60 minutes
-    uint256 private wateringWindow = 300; // 5 minutes
+
     address payable public creator;
 
     bytes32 internal keyHash;
@@ -96,7 +99,7 @@ contract CryptOrchidERC721 is ERC721PresetMinterPauserAutoId, WaterLevel, Ownabl
     }
 
     function _beforeTokenTransfer(address from, address to, uint256 tokenId) internal virtual override {
-        require(address(0) == to || alive(tokenId - 1, now), "Dead CryptOrchids cannot be transferred");
+        require(address(0) == to || alive(tokenId - 1), "Dead CryptOrchids cannot be transferred");
         super._beforeTokenTransfer(from, to, tokenId);
     }
 
@@ -128,7 +131,7 @@ contract CryptOrchidERC721 is ERC721PresetMinterPauserAutoId, WaterLevel, Ownabl
         require(msg.value >= SafeMathChainlink.mul(currentPrice(), units), "Ether value sent is below the price");
         
         for(uint i=0; i<units; i++) {
-            requestNewRandomBulb(msg.sender, seed);
+            requestNewRandomBulb(address(msg.sender), seed);
         }
         creator.transfer(msg.value);
     }
@@ -164,41 +167,40 @@ contract CryptOrchidERC721 is ERC721PresetMinterPauserAutoId, WaterLevel, Ownabl
     
         _tokenIds.increment();
         uint256 newItemId = _tokenIds.current();
-        address sender = address(requestToSender[requestId]);
-
+        address sender = requestToSender[requestId];
         _safeMint(sender, newItemId);   
     }
 
-    function alive(uint256 index, uint currentTime) public view returns (bool) {
+    function alive(uint256 index) public view returns (bool) {
         uint256 currentWaterLevel = waterLevel[index];
-        uint256 elapsed = currentTime - cryptorchids[index].plantedAt;
-        uint fullCycles = SafeMathChainlink.div(uint(elapsed), wateringPeriod);
-        uint256 modulo = SafeMathChainlink.mod(elapsed, wateringPeriod);
+        uint256 elapsed = now - cryptorchids[index].plantedAt;
+        uint fullCycles = SafeMathChainlink.div(uint(elapsed), GROWTH_CYCLE);
+        uint256 modulo = SafeMathChainlink.mod(elapsed, GROWTH_CYCLE);
 
         if (currentWaterLevel == fullCycles) {
             return true;
         }
 
-        if (SafeMathChainlink.add(currentWaterLevel, 1) == fullCycles && modulo < wateringWindow) {
+        if (SafeMathChainlink.add(currentWaterLevel, 1) == fullCycles && modulo < WATERING_WINDOW) {
             return true;
         }
 
         return false;
     }
 
-    function water(uint256 tokenId, uint currentTime) public {
+    function water(uint256 tokenId) public {
         require(msg.sender == ownerOf(tokenId), "Only the Owner can water a CryptOrchid.");
-        uint256 index = SafeMathChainlink.add(tokenId, 1);
+        uint256 index = SafeMathChainlink.sub(tokenId, 1);
         
-        if (!alive(index, currentTime)) {
+        if (!alive(index)) {
             burn(tokenId);
             emit Composted(tokenId);
             return;
         }
 
         uint256 wateringLevel = waterLevel[index];
-        uint256 elapsed = currentTime - cryptorchids[index].plantedAt;
-        uint fullCycles = SafeMathChainlink.div(uint(elapsed), wateringPeriod);
+        uint256 elapsed = now - cryptorchids[index].plantedAt;
+        uint fullCycles = SafeMathChainlink.div(uint(elapsed), GROWTH_CYCLE);
 
         if (wateringLevel > fullCycles) {
             burn(tokenId);

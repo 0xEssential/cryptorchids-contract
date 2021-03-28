@@ -68,9 +68,6 @@ const config: HardhatUserConfig = {
     outDir: 'typechain',
     target: 'ethers-v5',
   },
-  mocha: {
-    timeout: 0,
-  },
   external: process.env.HARDHAT_FORK
     ? {
         deployments: {

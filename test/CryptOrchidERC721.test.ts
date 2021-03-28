@@ -1,12 +1,13 @@
 import chai, {expect} from './chai-setup';
+import { chunk } from 'lodash';
 import {
   ethers,
   deployments,
   getUnnamedAccounts,
-  getNamedAccounts,
 } from 'hardhat';
-import {CryptOrchidERC721} from '../typechain';
-import {setupUser, setupUsers} from './utils';
+import { setupUsers } from './utils';
+import { add, compareAsc } from 'date-fns'
+import { BigNumber } from 'ethers';
 
 const keyhash = '0x6c3699283bda56ad74f6b855546325b68d482e983852a7a82979cc4807b641f4'
 
@@ -48,88 +49,106 @@ describe('CryptOrchidERC721', function () {
     expect(await CryptOrchidERC721.totalSupply()).to.equal(0);
   });
 
-  xit("Random Number Should successfully make an external random number request", async () => {    
-    const { CryptOrchidERC721, VRFCoordinatorMock, users } = await setup();
-    const transaction = await users[0].CryptOrchidERC721.webMint(
-      Math.ceil(Math.random()),
-      { 
-        value: ethers.utils.parseUnits('0.01', 'ether'),
-        from: users[0].address,
-        gasLimit: 9500000
-      }
-    );
+  it("Uses 3 hours as the GROWTH_CYCLE", async function() {
+    const { CryptOrchidERC721 } = await setup();
+    const GROWTH_CYCLE = await CryptOrchidERC721.GROWTH_CYCLE();
+    const now = new Date();
+    const wateringStart = add(now, {seconds: GROWTH_CYCLE.toNumber()});
+    const expectedWateringStart = add(now, {hours: 3})
 
-    console.warn("testsender", users[0].address)
-      
-    const tx_receipt = await transaction.wait()
-
-    const topics = tx_receipt.events.reduce((acc, event) => (
-      [
-        ...acc,
-        ...event?.topics
-      ]
-    ), [])
-
-    console.warn(topics)
-
-    const requestId = tx_receipt.events[2].topics[0]
-
-    // await Promise.all(
-    //   topics.map(async (topic) => {
-    //     const contractSender = await CryptOrchidERC721.requestToSender(requestId)
-    //     console.log("sender found?", contractSender)
-    //   })
-    // )
-    // console.warn("requestId", requestId)
-    
-    const tx = await VRFCoordinatorMock.callBackWithRandomness(requestId, 777, CryptOrchidERC721.address)
-    
-    const ownedCount = await users[0].CryptOrchidERC721.balanceOf(users[0].address)
-    // const total = await users[0].CryptOrchidERC721.cryptorchids()
-      // console.warn(total)
-    expect(ownedCount).to.equal(1);
-  })
-
-  it("Allows an owner to water", async function() {
-    const { users, CryptOrchidERC721 } = await setup();
-
-    const transaction = await users[0].CryptOrchidERC721.webMint(
-      Math.ceil(Math.random()),
-      { 
-        value: ethers.utils.parseUnits('0.01', 'ether'),
-        from: users[0].address,
-        gasLimit: 9500000
-      }
-    );
-
-    await transaction.wait()
-    const now = new Date().getTime() * 1000
-    const watering  = await users[0].CryptOrchidERC721.water(1, now);
-    console.log(watering)
+    expect(compareAsc(wateringStart, expectedWateringStart)).to.equal(0);
   });
 
-  xdescribe('buildSpeciesMetadata', function () {
-    it("Returns moth orchid for randomNumber <= 3074", async function() {
-      const { CryptOrchidERC721 } = await setup();
+  it("Uses 1 hour as the WATERING_WINDOW", async function() {
+    const { CryptOrchidERC721 } = await setup();
+    const WATERING_WINDOW = await CryptOrchidERC721.WATERING_WINDOW();
+    const now = new Date();
+    const wateringEnd = add(now, {seconds: WATERING_WINDOW.toNumber()});
+    const expectedWateringEnd = add(now, {hours: 1})
+
+    expect(compareAsc(wateringEnd, expectedWateringEnd)).to.equal(0);
+  });
+
+  describe.only('webMint', function () {
+    const maxUnits = 20;
+    const minUnits = 1;
+    let requestIds = [];
+    let mockedCoordinator;
+    let cryptorchidsContract;
+    let account;
+
+    const webMint = async (units: number) => {
+      const { CryptOrchidERC721, VRFCoordinatorMock, users } = await setup();
+
+      cryptorchidsContract = CryptOrchidERC721;
+      account = users[0];
+      mockedCoordinator = VRFCoordinatorMock      
+
+      const transaction = await account.CryptOrchidERC721.webMint(
+        units,
+        Math.ceil(Math.random()),
+        { 
+          value: ethers.utils.parseUnits('0.02', 'ether').mul(units),
+        }
+      );
       
-      const randomNumber = Math.floor(Math.random() * 3074) + 1  
+      const tx_receipt = await transaction.wait();
+      requestIds = chunk(tx_receipt.events, 4).reduce((acc, chunk) => (
+        [
+          ...acc,
+          chunk[3].data
+        ]
+      ), [])
 
+      const pseudoRandom = Math.floor(Math.random() * (10_000 - 1));
 
-      expect(await CryptOrchidERC721.buildSpeciesMetadata(randomNumber)).to.equal(0);
+      await Promise.all(requestIds.map(async (requestId) => (
+        await mockedCoordinator.callBackWithRandomness(
+          requestId, pseudoRandom, cryptorchidsContract.address
+        )
+      )));
+    }
+    
+    it("Mints units number of tokens for sender", async () => {      
+      const units = Math.floor(Math.random() * (maxUnits - minUnits + 1)) + minUnits;
+      
+      await webMint(units);
+
+      const supply = await cryptorchidsContract.totalSupply();
+      const ownedBySender = await cryptorchidsContract.balanceOf(account.address);
+      expect(supply.toNumber()).to.equal(units);
+      expect(ownedBySender).to.equal(units);
+    })
+
+    it("Mints a moth orchid for randomNumber <= 3074", async function() {
+      // await mockedCoordinator.callBackWithRandomness(requestId, 10_777, cryptorchidsContract.address)
+
+      // expect(await CryptOrchidERC721.buildSpeciesMetadata(randomNumber)).to.equal(0);
     });
   })
+  describe("Token functionality", async () => {
+    
+    // describe('alive()', async() => {
+
+    // });
 
 
-
-  // it('transfer fails', async function () {
-  //   const {users} = await setup();
-  //   await expect(
-  //     users[0].CryptOrchidERC721.safeTransferFrom(users[1].address, 1)
-  //   ).to.be.revertedWith('NOT_ENOUGH_TOKENS');
-  // });
-
-  // it('transfer succeed', async function () {
-  //   const {users, simpleERC20Beneficiary} = await setup();
-  //   await simpleERC20Beneficiary.CryptOrchidERC721.transfer(users[1].address, 1);
-  // });
+    it("Allows an owner to water", async function() {
+      const { users } = await setup();
+  
+      const transaction = await users[0].CryptOrchidERC721.webMint(
+        Math.ceil(Math.random()),
+        { 
+          value: ethers.utils.parseUnits('0.01', 'ether'),
+          from: users[0].address,
+          gasLimit: BigNumber.from(9500000)
+        }
+      );
+  
+      await transaction.wait()
+      const now = new Date().getTime() * 1000
+      const watering  = await users[0].CryptOrchidERC721.water(1, now);
+      console.log(watering)
+    });
+  })
 });
