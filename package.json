@@ -77,6 +77,8 @@
     "fork:test": "node ./scripts.js fork:test"
   },
   "dependencies": {
-    "@chainlink/contracts": "^0.1.6"
+    "@chainlink/contracts": "^0.1.6",
+    "node-fetch": "^2.6.1",
+    "yargs-parser": "^20.2.7"
   }
 }
