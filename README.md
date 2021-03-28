@@ -1,6 +1,6 @@
 # CryptOrchids Contract
 
-This repo contains the Solidity smart contract code for [CryptOrchids](https://cryptorchids.io), a NFT based game where CryptOrchid growers must water their flower every 7 days, or else it dies and cannot be sold, destroying it's secondary market value.
+This repo contains the Solidity smart contract code for [CryptOrchids](https://cryptorchids.io), the NFT based game where CryptOrchid growers must water their flower every 7 days, or else it dies and cannot be sold, destroying it's secondary market value.
 
 The best place to verify the code is via Etherscan. The [CryptOrchids website](https://cryptorchids.io) has a footer link to the contract on Etherscan where the source code has been uploaded and validated.
 
