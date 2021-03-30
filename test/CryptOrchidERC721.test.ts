@@ -3,48 +3,96 @@ import {chunk} from 'lodash';
 import {ethers, deployments, getUnnamedAccounts} from 'hardhat';
 import {setupUsers} from './utils';
 import {add, compareAsc} from 'date-fns';
+import {BigNumber} from 'ethers';
 
+const maxUnits = 20;
+const minUnits = 1;
 const keyhash =
   '0x6c3699283bda56ad74f6b855546325b68d482e983852a7a82979cc4807b641f4';
 
 const numberBetween = (min: number, max: number) =>
   Math.floor(Math.random() * (max - min + 1)) + min;
 
-const setup = deployments.createFixture(async () => {
-  const [owner] = await ethers.getSigners();
-
-  const MockLink = await ethers.getContractFactory('MockLink');
-  const VRFCoordinatorMock = await ethers.getContractFactory(
-    'VRFCoordinatorMock'
-  );
-  const link = await MockLink.deploy();
-  const vrfCoordinatorMock = await VRFCoordinatorMock.deploy(link.address);
-
-  const CryptOrchidERC721 = await ethers.getContractFactory('CryptOrchidsMock');
-
-  const CryptOrchids = await CryptOrchidERC721.deploy(
-    vrfCoordinatorMock.address,
-    link.address,
-    keyhash
-  );
-
-  await link.transfer(CryptOrchids.address, '2000000000000000000');
-
-  const contracts = {
-    CryptOrchidERC721: CryptOrchids,
-    VRFCoordinatorMock: vrfCoordinatorMock,
-  };
-
-  const users = await setupUsers(await getUnnamedAccounts(), contracts);
-
-  return {
-    ...contracts,
-    users,
-    owner,
-  };
-});
-
 describe('CryptOrchidERC721', function () {
+  let mockedCoordinator;
+  let cryptorchidsContract;
+  let account;
+
+  const setup = deployments.createFixture(async () => {
+    const [owner] = await ethers.getSigners();
+
+    const MockLink = await ethers.getContractFactory('MockLink');
+    const VRFCoordinatorMock = await ethers.getContractFactory(
+      'VRFCoordinatorMock'
+    );
+    const link = await MockLink.deploy();
+    const vrfCoordinatorMock = await VRFCoordinatorMock.deploy(link.address);
+
+    const CryptOrchidERC721 = await ethers.getContractFactory(
+      'CryptOrchidsMock'
+    );
+
+    const CryptOrchids = await CryptOrchidERC721.deploy(
+      vrfCoordinatorMock.address,
+      link.address,
+      keyhash
+    );
+
+    await link.transfer(CryptOrchids.address, '2000000000000000000');
+
+    const contracts = {
+      CryptOrchidERC721: CryptOrchids,
+      VRFCoordinatorMock: vrfCoordinatorMock,
+    };
+
+    const users = await setupUsers(await getUnnamedAccounts(), contracts);
+
+    return {
+      ...contracts,
+      users,
+      owner,
+    };
+  });
+
+  const webMint = async (units: number) => {
+    const {CryptOrchidERC721, VRFCoordinatorMock, users} = await setup();
+
+    cryptorchidsContract = CryptOrchidERC721;
+    account = users[0];
+    mockedCoordinator = VRFCoordinatorMock;
+
+    const transaction = await account.CryptOrchidERC721.webMint(units, {
+      value: ethers.utils.parseUnits('0.02', 'ether').mul(units),
+    });
+  };
+
+  const germinate = async (
+    tokenId: number,
+    pseudoRandom = numberBetween(0, 10_000)
+  ) => {
+    const transaction = await account.CryptOrchidERC721.germinate(
+      tokenId,
+      pseudoRandom
+    );
+
+    const tx_receipt = await transaction.wait();
+    const requestIds = chunk(tx_receipt.events, 4).reduce(
+      (acc, chunk) => [...acc, chunk[3].data],
+      []
+    );
+
+    return Promise.all(
+      requestIds.map(
+        async (requestId) =>
+          await mockedCoordinator.callBackWithRandomness(
+            requestId,
+            pseudoRandom,
+            cryptorchidsContract.address
+          )
+      )
+    );
+  };
+
   it('Does not create any tokens on deployment', async function () {
     const {CryptOrchidERC721} = await setup();
 
@@ -71,58 +119,10 @@ describe('CryptOrchidERC721', function () {
     expect(compareAsc(wateringEnd, expectedWateringEnd)).to.equal(0);
   });
 
-  describe('webMint', function () {
-    const maxUnits = 20;
-    const minUnits = 1;
-    let requestIds = [];
-    let mockedCoordinator;
-    let cryptorchidsContract;
-    let account;
-
-    const webMint = async (
-      units: number,
-      pseudoRandom = numberBetween(0, 10_000)
-    ) => {
-      const {CryptOrchidERC721, VRFCoordinatorMock, users} = await setup();
-
-      cryptorchidsContract = CryptOrchidERC721;
-      account = users[0];
-      mockedCoordinator = VRFCoordinatorMock;
-
-      const transaction = await account.CryptOrchidERC721.webMint(
-        units,
-        Math.ceil(Math.random()),
-        {
-          value: ethers.utils.parseUnits('0.02', 'ether').mul(units),
-        }
-      );
-
-      const tx_receipt = await transaction.wait();
-      requestIds = chunk(tx_receipt.events, 4).reduce(
-        (acc, chunk) => [...acc, chunk[3].data],
-        []
-      );
-
-      return Promise.all(
-        requestIds.map(
-          async (requestId) =>
-            await mockedCoordinator.callBackWithRandomness(
-              requestId,
-              pseudoRandom,
-              cryptorchidsContract.address
-            )
-        )
-      );
-    };
-
-    // For picking species, we receive a huge number from VRF which we grab the 10k modulus.
-    // Rather than using those massive numbers in test, we're using 0 - 10k, which results
-    // in the same modulus frequency.
+  describe('minting', function () {
     it('Mints units number of tokens for sender', async () => {
       const units = numberBetween(maxUnits, minUnits);
-
       await webMint(units);
-
       const supply = await cryptorchidsContract.totalSupply();
       const ownedBySender = await cryptorchidsContract.balanceOf(
         account.address
@@ -130,187 +130,211 @@ describe('CryptOrchidERC721', function () {
       expect(supply.toNumber()).to.equal(units);
       expect(ownedBySender).to.equal(units);
     });
+  });
 
-    it('Mints a moth orchid for randomNumber <= 3074', async function () {
-      await webMint(1, numberBetween(0, 3074));
+  describe('germinating', function () {
+    let tokenId;
 
-      const {0: species} = await cryptorchidsContract.getTokenMetadata(1);
+    beforeEach(async () => {
+      await webMint(1);
+
+      tokenId = await cryptorchidsContract.tokenOfOwnerByIndex(
+        account.address,
+        0
+      );
+    });
+
+    it('Throws when non-owner calls water function', async function () {
+      expect(async () => await cryptorchidsContract.germinate(tokenId)).to
+        .throw;
+    });
+
+    it('sets plantedAt', async () => {
+      await germinate(tokenId);
+      const {1: plantedAt} = await cryptorchidsContract.getTokenMetadata(
+        tokenId
+      );
+      expect(plantedAt).to.not.eq(0);
+    });
+    // For picking species, we receive a huge number from VRF which we grab the 10k modulus.
+    // Rather than using those massive numbers in test, we're using 0 - 10k, which results
+    // in the same modulus frequency.
+    it('Germinates a moth orchid for randomNumber <= 3074', async function () {
+      await germinate(tokenId, numberBetween(0, 3074));
+      const {0: species} = await cryptorchidsContract.getTokenMetadata(tokenId);
       expect(species).to.equal('phalaenopsis micholitzii');
     });
 
-    it('Mints an orange cattelya for 3074 < randomNumber <= 6074', async function () {
-      await webMint(1, numberBetween(3075, 6074));
-
-      const {0: species} = await cryptorchidsContract.getTokenMetadata(1);
+    it('Germinates an orange cattelya for 3074 < randomNumber <= 6074', async function () {
+      await germinate(1, numberBetween(3075, 6074));
+      const {0: species} = await cryptorchidsContract.getTokenMetadata(tokenId);
       expect(species).to.equal('guarianthe aurantiaca');
     });
 
-    it('Mints a blue vanda for 6074 < randomNumber <= 8074', async function () {
-      await webMint(1, numberBetween(6075, 8074));
-
-      const {0: species} = await cryptorchidsContract.getTokenMetadata(1);
+    it('Germinates a blue vanda for 6074 < randomNumber <= 8074', async function () {
+      await germinate(tokenId, numberBetween(6075, 8074));
+      const {0: species} = await cryptorchidsContract.getTokenMetadata(tokenId);
       expect(species).to.equal('vanda coerulea');
     });
 
-    it("Mints a lady's slipper for 8074 < randomNumber <= 9074", async function () {
-      await webMint(1, numberBetween(8075, 9074));
-
-      const {0: species} = await cryptorchidsContract.getTokenMetadata(1);
+    it("Germinates a lady's slipper for 8074 < randomNumber <= 9074", async function () {
+      await germinate(tokenId, numberBetween(8075, 9074));
+      const {0: species} = await cryptorchidsContract.getTokenMetadata(tokenId);
       expect(species).to.equal('cypripedium calceolus');
     });
 
-    it('Mints a Vietnamese Paphiopedilum for 9_074 < randomNumber <= 9574', async function () {
-      await webMint(1, numberBetween(9_075, 9_574));
-
-      const {0: species} = await cryptorchidsContract.getTokenMetadata(1);
+    it('Germinates a Vietnamese Paphiopedilum for 9_074 < randomNumber <= 9574', async function () {
+      await germinate(tokenId, numberBetween(9_075, 9_574));
+      const {0: species} = await cryptorchidsContract.getTokenMetadata(tokenId);
       expect(species).to.equal('paphiopedilum vietnamense');
     });
 
-    it('Mints a Kayasima Miltonia for 9574 < randomNumber <= 9824', async function () {
-      await webMint(1, numberBetween(9575, 9824));
-
-      const {0: species} = await cryptorchidsContract.getTokenMetadata(1);
+    it('Germinates a Kayasima Miltonia for 9574 < randomNumber <= 9824', async function () {
+      await germinate(tokenId, numberBetween(9575, 9824));
+      const {0: species} = await cryptorchidsContract.getTokenMetadata(tokenId);
       expect(species).to.equal('miltonia kayasimae');
     });
 
-    it("Mints a Hochstetter's butterfly orchid for 9824 < randomNumber <= 9924", async function () {
-      await webMint(1, numberBetween(9_825, 9_924));
-
-      const {0: species} = await cryptorchidsContract.getTokenMetadata(1);
+    it("Germinates a Hochstetter's butterfly orchid for 9824 < randomNumber <= 9924", async function () {
+      await germinate(tokenId, numberBetween(9_825, 9_924));
+      const {0: species} = await cryptorchidsContract.getTokenMetadata(tokenId);
       expect(species).to.equal('platanthera azorica');
     });
 
-    it('Mints a Ghost orchid for 9_924 < randomNumber <= 9_974', async function () {
-      await webMint(1, numberBetween(9_925, 9_974));
-
-      const {0: species} = await cryptorchidsContract.getTokenMetadata(1);
+    it('Germinates a Ghost orchid for 9_924 < randomNumber <= 9_974', async function () {
+      await germinate(tokenId, numberBetween(9_925, 9_974));
+      const {0: species} = await cryptorchidsContract.getTokenMetadata(tokenId);
       expect(species).to.equal('dendrophylax lindenii');
     });
 
-    it('Mints a Gold of Kinabalu for 9_974 < randomNumber <= 9_999', async function () {
-      await webMint(1, numberBetween(9_975, 9_999));
-
-      const {0: species} = await cryptorchidsContract.getTokenMetadata(1);
+    it('Germinates a Gold of Kinabalu for 9_974 < randomNumber <= 9_999', async function () {
+      await germinate(tokenId, numberBetween(9_975, 9_999));
+      const {0: species} = await cryptorchidsContract.getTokenMetadata(tokenId);
       expect(species).to.equal('paphiopedilum rothschildianum');
     });
 
-    it('Mints THE Shenzen Nongke for randomNumber = 10_000', async function () {
-      await webMint(1, 10_000);
-
-      const {0: species} = await cryptorchidsContract.getTokenMetadata(1);
+    it('Germiantes THE Shenzen Nongke for randomNumber = 10_000', async function () {
+      await germinate(1, 10_000);
+      const {0: species} = await cryptorchidsContract.getTokenMetadata(tokenId);
       expect(species).to.equal('shenzhenica orchidaceae');
     });
+  });
 
-    describe('Token functionality', () => {
-      let tokenId;
-      let GROWTH_CYCLE_MS;
-      let WATERING_WINDOW_MS;
+  describe('Token functionality', () => {
+    let tokenId;
+    let GROWTH_CYCLE_MS;
+    let WATERING_WINDOW_MS;
 
-      beforeEach(async () => {
-        const cycle = await cryptorchidsContract.GROWTH_CYCLE();
-        const wateringWindow = await cryptorchidsContract.WATERING_WINDOW();
+    beforeEach(async () => {
+      await webMint(1);
 
-        GROWTH_CYCLE_MS = cycle.mul(1000);
-        WATERING_WINDOW_MS = wateringWindow.mul(1000);
+      const cycle = await cryptorchidsContract.GROWTH_CYCLE();
+      const wateringWindow = await cryptorchidsContract.WATERING_WINDOW();
 
-        await webMint(1);
+      GROWTH_CYCLE_MS = cycle.mul(BigNumber.from(1000));
+      WATERING_WINDOW_MS = wateringWindow.mul(BigNumber.from(1000));
 
-        tokenId = await cryptorchidsContract.tokenOfOwnerByIndex(
-          account.address,
-          0
-        );
-      });
+      tokenId = await cryptorchidsContract.tokenOfOwnerByIndex(
+        account.address,
+        0
+      );
 
-      it('returns true when a plant is alive less time than GROWTH_CYCLE', async () => {
-        const alive = await cryptorchidsContract.alive(tokenId - 1);
-        expect(alive).to.eq(true);
-      });
+      await germinate(tokenId);
+    });
 
-      it('returns true when a plant is in first WATERING_WINDOW', async () => {
-        await cryptorchidsContract.timeTravel(
-          GROWTH_CYCLE_MS.add(WATERING_WINDOW_MS.sub(60_000)).div(1000)
-        );
+    it('returns true when a plant is alive less time than GROWTH_CYCLE', async () => {
+      const alive = await cryptorchidsContract.alive(tokenId);
+      expect(alive).to.eq(true);
+    });
 
-        const alive = await cryptorchidsContract.alive(tokenId - 1);
-        expect(alive).to.eq(true);
-      });
+    it('returns true when a plant is in first WATERING_WINDOW', async () => {
+      await cryptorchidsContract.timeTravel(
+        GROWTH_CYCLE_MS.add(WATERING_WINDOW_MS.sub(60_000)).div(1000)
+      );
 
-      it('returns false when a plant is past first WATERING_WINDOW', async () => {
-        await cryptorchidsContract.timeTravel(
-          GROWTH_CYCLE_MS.add(WATERING_WINDOW_MS.add(60_000)).div(1000)
-        );
+      const alive = await cryptorchidsContract.alive(tokenId);
+      expect(alive).to.eq(true);
+    });
 
-        const alive = await cryptorchidsContract.alive(tokenId - 1);
-        expect(alive).to.eq(false);
-      });
+    it('returns false when a plant is past first WATERING_WINDOW', async () => {
+      await cryptorchidsContract.timeTravel(
+        GROWTH_CYCLE_MS.add(WATERING_WINDOW_MS.add(60_000)).div(1000)
+      );
 
-      it('returns true when a plant is in second WATERING_WINDOW', async () => {
-        await cryptorchidsContract.timeTravel(
-          GROWTH_CYCLE_MS.add(WATERING_WINDOW_MS.sub(60_000)).div(1000)
-        );
+      const alive = await cryptorchidsContract.alive(tokenId);
+      expect(alive).to.eq(false);
+    });
 
-        // Water during first watering window
-        const transaction = await account.CryptOrchidERC721.water(tokenId);
-        transaction.wait();
+    it('returns true when a plant is in second WATERING_WINDOW', async () => {
+      await cryptorchidsContract.timeTravel(
+        GROWTH_CYCLE_MS.add(WATERING_WINDOW_MS.sub(60_000)).div(1000)
+      );
 
-        const waterLevel = await cryptorchidsContract.waterLevel(tokenId - 1);
-        expect(waterLevel).to.eq(1);
+      // Water during first watering window
+      const transaction = await account.CryptOrchidERC721.water(tokenId);
+      transaction.wait();
 
-        // move ahead to second window
-        await cryptorchidsContract.timeTravel(
-          GROWTH_CYCLE_MS.add(WATERING_WINDOW_MS.mul(2)).div(1000)
-        );
+      const {2: waterLevel} = await cryptorchidsContract.getTokenMetadata(
+        tokenId
+      );
+      expect(waterLevel).to.eq(1);
 
-        const alive = await cryptorchidsContract.alive(tokenId - 1);
-        expect(alive).to.eq(true);
-      });
+      // move ahead to second window
+      await cryptorchidsContract.timeTravel(
+        GROWTH_CYCLE_MS.add(WATERING_WINDOW_MS.mul(2)).div(1000)
+      );
 
-      it('returns true when a plant is in third WATERING_WINDOW', async () => {
-        await cryptorchidsContract.timeTravel(
-          GROWTH_CYCLE_MS.add(WATERING_WINDOW_MS.sub(60_000)).div(1000)
-        );
+      const alive = await cryptorchidsContract.alive(tokenId);
+      expect(alive).to.eq(true);
+    });
 
-        // Water during first watering window
-        const transaction = await account.CryptOrchidERC721.water(tokenId);
-        transaction.wait();
+    it('returns true when a plant is in third WATERING_WINDOW', async () => {
+      await cryptorchidsContract.timeTravel(
+        GROWTH_CYCLE_MS.add(WATERING_WINDOW_MS.sub(60_000)).div(1000)
+      );
 
-        const waterLevel = await cryptorchidsContract.waterLevel(tokenId - 1);
-        expect(waterLevel).to.eq(1);
+      // Water during first watering window
+      const transaction = await account.CryptOrchidERC721.water(tokenId);
+      transaction.wait();
 
-        // move ahead to second window
-        await cryptorchidsContract.timeTravel(
-          GROWTH_CYCLE_MS.mul(2).add(WATERING_WINDOW_MS.sub(60_000)).div(1000)
-        );
+      const {2: waterLevel} = await cryptorchidsContract.getTokenMetadata(
+        tokenId
+      );
+      expect(waterLevel).to.eq(1);
 
-        // Water during second watering window
-        const secondTransaction = await account.CryptOrchidERC721.water(
-          tokenId
-        );
-        secondTransaction.wait();
+      // move ahead to second window
+      await cryptorchidsContract.timeTravel(
+        GROWTH_CYCLE_MS.mul(2).add(WATERING_WINDOW_MS.sub(60_000)).div(1000)
+      );
 
-        const waterLevelTwo = await cryptorchidsContract.waterLevel(
-          tokenId - 1
-        );
-        expect(waterLevelTwo).to.eq(2);
+      // Water during second watering window
+      const secondTransaction = await account.CryptOrchidERC721.water(tokenId);
+      secondTransaction.wait();
 
-        // Move ahead to third window
-        await cryptorchidsContract.timeTravel(
-          GROWTH_CYCLE_MS.mul(3).add(WATERING_WINDOW_MS.sub(60_000)).div(1000)
-        );
-        const alive = await cryptorchidsContract.alive(tokenId - 1);
-        expect(alive).to.eq(true);
-      });
+      const {2: waterLevelTwo} = await cryptorchidsContract.getTokenMetadata(
+        tokenId
+      );
+      expect(waterLevelTwo).to.eq(2);
 
-      it('Increases water level when owner calls water function', async function () {
-        const transaction = await account.CryptOrchidERC721.water(tokenId);
-        transaction.wait();
-        const waterLevel = await cryptorchidsContract.waterLevel(tokenId - 1);
-        expect(waterLevel).to.eq(1);
-      });
+      // Move ahead to third window
+      await cryptorchidsContract.timeTravel(
+        GROWTH_CYCLE_MS.mul(3).add(WATERING_WINDOW_MS.sub(60_000)).div(1000)
+      );
+      const alive = await cryptorchidsContract.alive(tokenId);
+      expect(alive).to.eq(true);
+    });
 
-      it('Throws when non-owner calls water function', async function () {
-        expect(async () => await cryptorchidsContract.water(tokenId)).to.throw;
-      });
+    it('Increases water level when owner calls water function', async function () {
+      const transaction = await account.CryptOrchidERC721.water(tokenId);
+      transaction.wait();
+      const {2: waterLevel} = await cryptorchidsContract.getTokenMetadata(
+        tokenId
+      );
+      expect(waterLevel).to.eq(1);
+    });
+
+    it('Throws when non-owner calls water function', async function () {
+      expect(async () => await cryptorchidsContract.water(tokenId)).to.throw;
     });
   });
 });

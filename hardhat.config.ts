@@ -14,7 +14,7 @@ const config: HardhatUserConfig = {
     settings: {
       optimizer: {
         enabled: true,
-        runs: 1000
+        runs: 1000,
       },
     },
   },
@@ -42,7 +42,6 @@ const config: HardhatUserConfig = {
     localhost: {
       url: node_url('localhost'),
       accounts: accounts(),
-      
     },
     mainnet: {
       url: node_url('mainnet'),

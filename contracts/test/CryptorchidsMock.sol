@@ -1,5 +1,5 @@
 pragma solidity >=0.6.6 <0.9.0;
-import "hardhat/console.sol";
+// import "hardhat/console.sol";
 
 import "../CryptOrchidERC721/CryptOrchidERC721.sol";
 
