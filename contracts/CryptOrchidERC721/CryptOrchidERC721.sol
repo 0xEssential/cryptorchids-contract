@@ -184,7 +184,7 @@ contract CryptOrchidERC721 is ERC721PresetMinterPauserAutoId, WaterLevel, Ownabl
     }
 
     function water(uint256 tokenId) public {
-        require(msg.sender == ownerOf(tokenId), "Only the Owner can water a CryptOrchid.");
+        require(_isApprovedOrOwner(_msgSender(), tokenId), "Only the Owner can water a CryptOrchid.");
         uint256 index = SafeMathChainlink.sub(tokenId, 1);
 
         if (!alive(index)) {
@@ -211,7 +211,7 @@ contract CryptOrchidERC721 is ERC721PresetMinterPauserAutoId, WaterLevel, Ownabl
     }
 
     function compost(uint256 tokenId) public {
-        require(msg.sender == ownerOf(tokenId), "Only the Owner can compost a CryptOrchid.");
+        require(_isApprovedOrOwner(_msgSender(), tokenId), "Only the Owner can compost a CryptOrchid.");
 
         burn(tokenId);
         emit Composted(tokenId);

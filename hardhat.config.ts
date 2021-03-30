@@ -11,6 +11,12 @@ import {node_url, accounts} from './utils/network';
 const config: HardhatUserConfig = {
   solidity: {
     version: '0.6.6',
+    settings: {
+      optimizer: {
+        enabled: true,
+        runs: 1000
+      },
+    },
   },
   namedAccounts: {
     deployer: 0,
@@ -36,6 +42,7 @@ const config: HardhatUserConfig = {
     localhost: {
       url: node_url('localhost'),
       accounts: accounts(),
+      
     },
     mainnet: {
       url: node_url('mainnet'),
