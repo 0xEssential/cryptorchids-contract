@@ -1,0 +1,27 @@
+{
+  "name": "Ghost Orchid",
+  "description": "dendrophylax lindenii",
+  "image": "https://arweave.net/4K8PR1BLhwV0IsBG1PwR49vuqQBFc7_ZBdZJTwDmQcw",
+  "attributes": [
+    {
+      "trait_type": "Growth Stage",
+      "value": "Flowering"
+    },
+    {
+      "trait_type": "Species",
+      "value": "White Moth"
+    },
+    {
+      "trait_type": "Ghost Orchid",
+      "value": "dendrophylax lindenii"
+    },
+    {
+      "trait_type": "Rarity",
+      "value": "Super Rare"
+    },
+    {
+      "trait_type": "Bulbs per 10k",
+      "value": 50
+    }
+  ]
+}

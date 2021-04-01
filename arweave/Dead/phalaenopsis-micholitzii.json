@@ -1,0 +1,27 @@
+{
+  "name": "White Moth",
+  "description": "phalaenopsis micholitzii",
+  "image": "https://arweave.net/1per50KPNZxVetjB9yKUe5sVbwh_WvT0MPVhJQB9RHc",
+  "attributes": [
+    {
+      "trait_type": "Growth Stage",
+      "value": "Dead"
+    },
+    {
+      "trait_type": "Species",
+      "value": "White Moth"
+    },
+    {
+      "trait_type": "Latin Species",
+      "value": "phalaenopsis micholitzii"
+    },
+    {
+      "trait_type": "Rarity",
+      "value": "Common"
+    },
+    {
+      "trait_type": "Bulbs per 10k",
+      "value": 3074
+    }
+  ]
+}

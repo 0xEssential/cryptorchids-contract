@@ -1,0 +1,19 @@
+{
+  "name": "Seed",
+  "description": "granum",
+  "image": "https://arweave.net/P6OxKvWfGCwBFr94PVLpnYwZ2igr7oboM79AGGfR9F4",
+  "attributes": [
+    {
+      "trait_type": "Growth Stage",
+      "value": "Seed"
+    },
+    {
+      "trait_type": "Species",
+      "value": "Seed"
+    },
+    {
+      "trait_type": "Latin Species",
+      "value": "granum"
+    }
+  ]
+}

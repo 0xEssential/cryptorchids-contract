@@ -1,0 +1,27 @@
+{
+  "name": "Gold of Kinabalu",
+  "description": "paphiopedilum rothschildianum",
+  "image": "https://arweave.net/kteMx6ZoVTxw4g7KY7MqYnxOw_8zPGWKUYKkw3tHnzE",
+  "attributes": [
+    {
+      "trait_type": "Growth Stage",
+      "value": "Flowering"
+    },
+    {
+      "trait_type": "Species",
+      "value": "Gold of Kinabalu"
+    },
+    {
+      "trait_type": "Latin Species",
+      "value": "paphiopedilum rothschildianum"
+    },
+    {
+      "trait_type": "Rarity",
+      "value": "Legendary"
+    },
+    {
+      "trait_type": "Bulbs per 10k",
+      "value": 25
+    }
+  ]
+}

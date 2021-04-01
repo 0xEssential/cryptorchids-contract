@@ -1,0 +1,27 @@
+{
+  "name": "Hochstetter's Butterfly Orchid",
+  "description": "platanthera azorica",
+  "image": "https://arweave.net/MLLJWCVmwmQMpZKo7OtBFzmK6ww7Qh4KqauELMJw3RM",
+  "attributes": [
+    {
+      "trait_type": "Growth Stage",
+      "value": "Flowering"
+    },
+    {
+      "trait_type": "Species",
+      "value": "Hochstetter's Butterfly Orchid"
+    },
+    {
+      "trait_type": "Latin Species",
+      "value": "platanthera azorica"
+    },
+    {
+      "trait_type": "Rarity",
+      "value": "Super Rare"
+    },
+    {
+      "trait_type": "Bulbs per 10k",
+      "value": 100
+    }
+  ]
+}

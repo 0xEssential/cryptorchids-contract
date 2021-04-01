@@ -1,0 +1,27 @@
+{
+  "name": "Shenzhen Nongke Orchid",
+  "description": "shenzhenica orchidaceae",
+  "image": "https://arweave.net/DfJSn_KCFg5gC1iS3628O6TykyqX4PortNGQkeD1_3c",
+  "attributes": [
+    {
+      "trait_type": "Growth Stage",
+      "value": "Dead"
+    },
+    {
+      "trait_type": "Species",
+      "value": "Shenzhen Nongke Orchid"
+    },
+    {
+      "trait_type": "Latin Species",
+      "value": "shenzhenica orchidaceae"
+    },
+    {
+      "trait_type": "Rarity",
+      "value": "Legendary"
+    },
+    {
+      "trait_type": "Bulbs per 10k",
+      "value": 1
+    }
+  ]
+}

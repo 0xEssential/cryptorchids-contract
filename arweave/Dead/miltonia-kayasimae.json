@@ -1,0 +1,27 @@
+{
+  "name": "Kayasima Miltonia",
+  "description": "miltonia kayasimae",
+  "image": "https://arweave.net/ccV6VpfGf8kw1K1YFJCsU1c6yq_tvQAC5zp9M19_pqA",
+  "attributes": [
+    {
+      "trait_type": "Growth Stage",
+      "value": "Dead"
+    },
+    {
+      "trait_type": "Species",
+      "value": "Kayasima Miltonia"
+    },
+    {
+      "trait_type": "Latin Species",
+      "value": "miltonia kayasimae"
+    },
+    {
+      "trait_type": "Rarity",
+      "value": "Rare"
+    },
+    {
+      "trait_type": "Bulbs per 10k",
+      "value": 250
+    }
+  ]
+}

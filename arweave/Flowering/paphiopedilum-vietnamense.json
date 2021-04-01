@@ -1,0 +1,27 @@
+{
+  "name": "Vietnamese Paphiopedilum",
+  "description": "paphiopedilum vietnamense",
+  "image": "https://arweave.net/b55GXyMDkT6ogbvHesqGcYYwlCEX2ybj2OXIkCoz6IU",
+  "attributes": [
+    {
+      "trait_type": "Growth Stage",
+      "value": "Flowering"
+    },
+    {
+      "trait_type": "Species",
+      "value": "Vietnamese Paphiopedilum"
+    },
+    {
+      "trait_type": "Latin Species",
+      "value": "paphiopedilum vietnamense"
+    },
+    {
+      "trait_type": "Rarity",
+      "value": "Rare"
+    },
+    {
+      "trait_type": "Bulbs per 10k",
+      "value": 500
+    }
+  ]
+}

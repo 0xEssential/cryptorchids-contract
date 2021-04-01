@@ -1,0 +1,27 @@
+{
+  "name": "Yellow Lady's Slipper",
+  "description": "cypripediu calceolus",
+  "image": "https://arweave.net/cwe_NVSaJCd6emWoatibng4CeL7oXumMLhfno_wA",
+  "attributes": [
+    {
+      "trait_type": "Growth Stage",
+      "value": "Flowering"
+    },
+    {
+      "trait_type": "Species",
+      "value": "Yellow Lady's Slipper"
+    },
+    {
+      "trait_type": "Latin Species",
+      "value": "cypripediu calceolus"
+    },
+    {
+      "trait_type": "Rarity",
+      "value": "Uncommon"
+    },
+    {
+      "trait_type": "Bulbs per 10k",
+      "value": 1000
+    }
+  ]
+}

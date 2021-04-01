@@ -1,0 +1,27 @@
+{
+  "name": "Blue Vanda",
+  "description": "vanda coerulea",
+  "image": "https://arweave.net/eSnqakNOfTyEjHIWkAJZiRmS6wCCwdx_fJ3l0EUJPXM",
+  "attributes": [
+    {
+      "trait_type": "Growth Stage",
+      "value": "Dead"
+    },
+    {
+      "trait_type": "Species",
+      "value": "Blue Vanda"
+    },
+    {
+      "trait_type": "Latin Species",
+      "value": "vanda coerulea"
+    },
+    {
+      "trait_type": "Rarity",
+      "value": "Uncommon"
+    },
+    {
+      "trait_type": "Bulbs per 10k",
+      "value": 2000
+    }
+  ]
+}
