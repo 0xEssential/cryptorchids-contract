@@ -21,12 +21,13 @@ contract CryptOrchidERC721 is ERC721PresetMinterPauserAutoId, Ownable, VRFConsum
     }
     mapping(uint256 => CryptOrchid) public cryptorchids;
 
-    enum Stage {Seed, Flower, Dead}
+    enum Stage {Unsold, Seed, Flower, Dead}
 
     uint256 public constant MAX_CRYPTORCHIDS = 10000;
     uint256 public constant GROWTH_CYCLE = 10800; // 3 hours
     uint256 public constant WATERING_WINDOW = 3600; // 1 hour
-    uint256 MAX_TIMESTAMP = 2**256 - 1;
+    uint256 internal constant MAX_TIMESTAMP = 2**256 - 1;
+    string internal constant GRANUM_ARWEAVE = "pHm6ysVq154aZ171iU0izH68t_sjGMglQvqxYNDA4h0";
 
     uint16[10] private limits = [0, 3074, 6074, 8074, 9074, 9574, 9824, 9924, 9974, 9999];
     string[10] private genum = [
@@ -42,22 +43,33 @@ contract CryptOrchidERC721 is ERC721PresetMinterPauserAutoId, Ownable, VRFConsum
         "paphiopedilum rothschildianum"
     ];
 
-    string[10] private speciesIPFSConstant = [
-        "QmcGsJ98KCUu32YztmTzFKVVN6daMf8s3YvMCH6MCZvbxK",
-        "QmcRXP47ov9KkAEWJWWVAjBGPPFJUB7tbTgqRhvsn6tdsf",
-        "QmUx1Ts6V3Dga4fhfeo6j2bRsaGDmD8V9KN5GTn4vmbW7E",
-        "QmetUGURmPTFM1RqwePRuDvTa9RropVu7KeMR1uPmqF3JH",
-        "QmVfVo15eCAcgFaBHFxZ2mn8bzyqJ4FRsCKJuKTnBGcYv8",
-        "QmQWt1Hw6dwqT3h3LhE9Zi2ZgbcyLCWZy1nHEeb7srDKrP",
-        "Qmc8nBpedwJ4yCoy129apqR7dNu926qmyWcM4xRtrdterJ",
-        "QmPNhwCs6s5GQjnpdf1N4LrYx2V724APNbZPHYUJ7beaSG",
-        "QmU7X4DpyJdftUgoL5SMqyBjYbz7q1JS3auBaTEQUj97jB",
-        "QmQmh9ZSrnUSLghiMzJq4sKqD2diRHoMP6h6vt6mrCQgvx"
+    string[10] private speciesArweaveConstant = [
+        "vxdAdCdwi2-Fn25UPRqzQPafS-g4H15wSe_7TbwW2s4",
+        "KBTtR60gLZMvp5DTDiVv08vecD96bh_V3W-8ko3QVQg",
+        "Yj42tKSh8M4MLirT1JmckDbDPzekMX7Vv6qp7Y93TAE",
+        "0FhRkI4QhYcH_ROKdylSTGnrruOpwVlFZRZ5cBF6ikU",
+        "62abDISfRV8yjSzk-xCm8TsYpjUZ91sCwQaBPvAxH8k",
+        "NEc4qWJwKSkmLgglfi9PmLYxASlbpmDBa4e9SxJxWuU",
+        "IILQaYkW3iYDw3OYSwLfbZFx_14jdIu3nUwMDYBBtuQ",
+        "NO9h1G_V5M7jrhY4X18CpJi4stDJj4hQTv23qqHdSj8",
+        "cwZB7FOgWK052sHrGe-vE9Z7t1dmKe3DSSyDPtBMY0c",
+        "oeGa3OqppFm1OONslz7xuValA2d4KCU0vKqnOTIyXdw"
+    ];
+
+    string[10] private deadSpeciesArweaveConstant = [
+        "f1_jQ1fVLmRJ-JKMgIe3XqtTzJl-7rX1igYcQjFhpVA",
+        "OPIRLIcORdTTuI-bWcQfShctfDjYv2nCtitzUGioDxg",
+        "5qBF2IB8sCzmp4MNn2GG24OTfreHWx4ooVI6OYUqvBk",
+        "OQiKGwQSmZlZxcGccrtu1ov6f2FfPSmD1ZicBaUzNCc",
+        "cam_7pRCFsDszqTjih_toj6B_Xl9oY3Ndy-Egc5IEhI",
+        "pHiPaw4T7PPnkO4yu2xYW7i-itQkYqVLZUUSvz9lE0w",
+        "WUFIJOnggBM8JeXlOM_iKVLqIipavfZhic1zcC5GkMw",
+        "gYJcHxh2l67m1xfuibbF8zzZ2J43dpOmT0ftVWStvns",
+        "LSp4B5T3B0HFXRU6P1qR1bMo6cTCOCGrGOZRj5IW6R0",
+        "22JEnCLgN7qX1d-4VeXHRdXPl87P2zxENJxQFYC6J8k"
     ];
 
     Counters.Counter private _tokenIds;
-
-    address payable public creator;
 
     bytes32 internal keyHash;
     uint256 internal vrfFee;
@@ -66,12 +78,13 @@ contract CryptOrchidERC721 is ERC721PresetMinterPauserAutoId, Ownable, VRFConsum
     address public LinkToken;
 
     event RequestedRandomness(bytes32 requestId);
-    event OverWatered(uint256 tokenId);
+    event Planted(uint256 tokenId);
     event Watered(uint256 tokenId, uint256 waterLevel);
     event Composted(uint256 tokenId);
 
     mapping(bytes32 => uint256) public requestToToken;
-    mapping(bytes32 => string) private speciesIPFS;
+    mapping(bytes32 => string) private speciesArweave;
+    mapping(bytes32 => string) private deadSpeciesArweave;
 
     constructor(
         address _VRFCoordinator,
@@ -81,22 +94,31 @@ contract CryptOrchidERC721 is ERC721PresetMinterPauserAutoId, Ownable, VRFConsum
         public
         payable
         VRFConsumerBase(_VRFCoordinator, _LinkToken)
-        ERC721PresetMinterPauserAutoId("CryptOrchids", "ORCHD", "ipfs://")
+        ERC721PresetMinterPauserAutoId("CryptOrchids", "ORCHD", "https://arweave.net")
     {
-        creator = msg.sender;
         VRFCoordinator = _VRFCoordinator;
         LinkToken = _LinkToken;
         keyHash = _keyhash;
         vrfFee = 0.1 * 10**18; // 0.1 LINK
 
         for (uint256 index = 0; index < genum.length; index++) {
-            speciesIPFS[keccak256(abi.encode(genum[index]))] = speciesIPFSConstant[index];
+            speciesArweave[keccak256(abi.encode(genum[index]))] = speciesArweaveConstant[index];
+            deadSpeciesArweave[keccak256(abi.encode(genum[index]))] = deadSpeciesArweaveConstant[index];
         }
     }
 
     function tokenURI(uint256 tokenId) public view virtual override returns (string memory) {
         (string memory species, , ) = getTokenMetadata(tokenId);
-        return string(abi.encodePacked(baseURI(), speciesIPFS[keccak256(abi.encode(species))]));
+
+        if (growthStage(tokenId) == Stage.Seed) {
+            return string(abi.encodePacked(baseURI(), GRANUM_ARWEAVE));
+        }
+
+        if (growthStage(tokenId) == Stage.Flower) {
+            return string(abi.encodePacked(baseURI(), speciesArweave[keccak256(abi.encode(species))]));
+        }
+
+        return string(abi.encodePacked(baseURI(), deadSpeciesArweave[keccak256(abi.encode(species))]));
     }
 
     function _beforeTokenTransfer(
@@ -125,6 +147,14 @@ contract CryptOrchidERC721 is ERC721PresetMinterPauserAutoId, Ownable, VRFConsum
         } else {
             return 20000000000000000; // 0 - 500     0.02 ETH
         }
+    }
+
+    /**
+     * @dev Withdraw ether from this contract (Callable by owner only)
+     */
+    function withdraw() public onlyOwner {
+        uint256 balance = address(this).balance;
+        msg.sender.transfer(balance);
     }
 
     receive() external payable {}
@@ -157,9 +187,11 @@ contract CryptOrchidERC721 is ERC721PresetMinterPauserAutoId, Ownable, VRFConsum
     }
 
     function fulfillRandomness(bytes32 requestId, uint256 randomness) internal override {
-        CryptOrchid storage orchid = cryptorchids[requestToToken[requestId]];
+        uint256 tokenId = requestToToken[requestId];
+        CryptOrchid storage orchid = cryptorchids[tokenId];
         orchid.species = pickSpecies(SafeMathChainlink.mod(randomness, 10000));
         orchid.plantedAt = currentTime();
+        emit Planted(tokenId);
     }
 
     function alive(uint256 tokenId) public view returns (bool) {
@@ -172,6 +204,7 @@ contract CryptOrchidERC721 is ERC721PresetMinterPauserAutoId, Ownable, VRFConsum
 
     function growthStage(uint256 tokenId) public view returns (Stage) {
         CryptOrchid memory orchid = cryptorchids[tokenId];
+        if (orchid.plantedAt == 0) return Stage.Unsold;
         if (orchid.plantedAt == MAX_TIMESTAMP) return Stage.Seed;
         uint256 currentWaterLevel = orchid.waterLevel;
         uint256 elapsed = currentTime() - orchid.plantedAt;
@@ -194,7 +227,6 @@ contract CryptOrchidERC721 is ERC721PresetMinterPauserAutoId, Ownable, VRFConsum
 
         if (!alive(tokenId)) {
             burn(tokenId);
-            emit Composted(tokenId);
             return;
         }
 
@@ -206,8 +238,6 @@ contract CryptOrchidERC721 is ERC721PresetMinterPauserAutoId, Ownable, VRFConsum
 
         if (wateringLevel > fullCycles) {
             burn(tokenId);
-            emit OverWatered(tokenId);
-            emit Composted(tokenId);
             return;
         }
 
