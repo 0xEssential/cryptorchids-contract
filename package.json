@@ -84,5 +84,8 @@
     "glob": "^7.1.6",
     "node-fetch": "2.6.1",
     "yargs-parser": "^20.2.7"
+  },
+  "engines": {
+    "node": "14"
   }
 }
