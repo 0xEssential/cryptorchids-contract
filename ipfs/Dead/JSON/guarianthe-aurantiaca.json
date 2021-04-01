@@ -1,19 +1,19 @@
 {
-  "name": "White Moth",
-  "description": "phalaenopsis micholitzii",
-  "image": "https://arweave.net/ugalwFZ-C6kE91D_LzfdyUAZfSjfjgv7P5AvriywC8w",
+  "name": "Orange Cattelya",
+  "description": "guarianthe aurantiaca",
+  "image": "ipfs://QmUWi5ht9oap6qDRWboqHHMh7FMdMZSuwGSJhTJz1JjxHX/guarianthe-aurantiaca.png",
   "attributes": [
     {
       "trait_type": "Growth Stage",
-      "value": "Flowering"
+      "value": "Dead"
     },
     {
       "trait_type": "Species",
-      "value": "White Moth"
+      "value": "Orange Cattelya"
     },
     {
       "trait_type": "Latin Species",
-      "value": "phalaenopsis micholitzii"
+      "value": "guarianthe aurantiaca"
     },
     {
       "trait_type": "Rarity",
@@ -21,7 +21,7 @@
     },
     {
       "trait_type": "Bulbs per 10k",
-      "value": 3074
+      "value": 3000
     }
   ]
 }

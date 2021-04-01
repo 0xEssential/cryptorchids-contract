@@ -1,7 +1,7 @@
 {
-  "name": "Orange Cattelya",
-  "description": "guarianthe aurantiaca",
-  "image": "https://arweave.net/qCWdazZUh7IwwgBYcW83Ow269GGCsz3eoLozcurdYfw",
+  "name": "Blue Vanda",
+  "description": "vanda coerulea",
+  "image": "ipfs://QmVts4pv2LXad6FhRqChKY9HuTzfYc6mQHprN5jks2Ma8H/vanda-coerulea.png",
   "attributes": [
     {
       "trait_type": "Growth Stage",
@@ -9,19 +9,19 @@
     },
     {
       "trait_type": "Species",
-      "value": "Orange Cattelya"
+      "value": "Blue Vanda"
     },
     {
       "trait_type": "Latin Species",
-      "value": "guarianthe aurantiaca"
+      "value": "vanda coerulea"
     },
     {
       "trait_type": "Rarity",
-      "value": "Common"
+      "value": "Uncommon"
     },
     {
       "trait_type": "Bulbs per 10k",
-      "value": 3000
+      "value": 2000
     }
   ]
 }

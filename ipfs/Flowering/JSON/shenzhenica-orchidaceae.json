@@ -1,11 +1,11 @@
 {
   "name": "Shenzhen Nongke Orchid",
   "description": "shenzhenica orchidaceae",
-  "image": "https://arweave.net/DfJSn_KCFg5gC1iS3628O6TykyqX4PortNGQkeD1_3c",
+  "image": "ipfs://QmVts4pv2LXad6FhRqChKY9HuTzfYc6mQHprN5jks2Ma8H/shenzhenica-orchidaceae.png",
   "attributes": [
     {
       "trait_type": "Growth Stage",
-      "value": "Dead"
+      "value": "Flowering"
     },
     {
       "trait_type": "Species",

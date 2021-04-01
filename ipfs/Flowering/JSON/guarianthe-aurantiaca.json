@@ -1,7 +1,7 @@
 {
-  "name": "Yellow Lady's Slipper",
-  "description": "cypripediu calceolus",
-  "image": "https://arweave.net/cwe_NVSaJCd6emWoatibng4CeL7oXumMLhfno_wA",
+  "name": "Orange Cattelya",
+  "description": "guarianthe aurantiaca",
+  "image": "ipfs://QmVts4pv2LXad6FhRqChKY9HuTzfYc6mQHprN5jks2Ma8H/guarianthe-aurantiaca.png",
   "attributes": [
     {
       "trait_type": "Growth Stage",
@@ -9,19 +9,19 @@
     },
     {
       "trait_type": "Species",
-      "value": "Yellow Lady's Slipper"
+      "value": "Orange Cattelya"
     },
     {
       "trait_type": "Latin Species",
-      "value": "cypripediu calceolus"
+      "value": "guarianthe aurantiaca"
     },
     {
       "trait_type": "Rarity",
-      "value": "Uncommon"
+      "value": "Common"
     },
     {
       "trait_type": "Bulbs per 10k",
-      "value": 1000
+      "value": 3000
     }
   ]
 }

@@ -1,7 +1,7 @@
 {
-  "name": "Blue Vanda",
-  "description": "vanda coerulea",
-  "image": "https://arweave.net/QuviKlh5fUq03KKOPxu1k9HHddwrnC1Rll3jo13xuHw",
+  "name": "Yellow Lady's Slipper",
+  "description": "cypripediu calceolus",
+  "image": "ipfs://QmVts4pv2LXad6FhRqChKY9HuTzfYc6mQHprN5jks2Ma8H/cypripedium-calceolus.png",
   "attributes": [
     {
       "trait_type": "Growth Stage",
@@ -9,11 +9,11 @@
     },
     {
       "trait_type": "Species",
-      "value": "Blue Vanda"
+      "value": "Yellow Lady's Slipper"
     },
     {
       "trait_type": "Latin Species",
-      "value": "vanda coerulea"
+      "value": "cypripediu calceolus"
     },
     {
       "trait_type": "Rarity",
@@ -21,7 +21,7 @@
     },
     {
       "trait_type": "Bulbs per 10k",
-      "value": 2000
+      "value": 1000
     }
   ]
 }

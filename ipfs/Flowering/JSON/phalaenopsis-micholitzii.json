@@ -1,7 +1,7 @@
 {
-  "name": "Vietnamese Paphiopedilum",
-  "description": "paphiopedilum vietnamense",
-  "image": "https://arweave.net/b55GXyMDkT6ogbvHesqGcYYwlCEX2ybj2OXIkCoz6IU",
+  "name": "White Moth",
+  "description": "phalaenopsis micholitzii",
+  "image": "ipfs://QmVts4pv2LXad6FhRqChKY9HuTzfYc6mQHprN5jks2Ma8H/phalaenopsis-micholitzii.png",
   "attributes": [
     {
       "trait_type": "Growth Stage",
@@ -9,19 +9,19 @@
     },
     {
       "trait_type": "Species",
-      "value": "Vietnamese Paphiopedilum"
+      "value": "White Moth"
     },
     {
       "trait_type": "Latin Species",
-      "value": "paphiopedilum vietnamense"
+      "value": "phalaenopsis micholitzii"
     },
     {
       "trait_type": "Rarity",
-      "value": "Rare"
+      "value": "Common"
     },
     {
       "trait_type": "Bulbs per 10k",
-      "value": 500
+      "value": 3074
     }
   ]
 }

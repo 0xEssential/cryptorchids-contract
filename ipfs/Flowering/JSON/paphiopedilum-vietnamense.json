@@ -1,11 +1,11 @@
 {
   "name": "Vietnamese Paphiopedilum",
   "description": "paphiopedilum vietnamense",
-  "image": "https://arweave.net/caNeGMMIvhyt0fETstzBbdzQby6zGputd1M7sO7X0Uk",
+  "image": "ipfs://QmVts4pv2LXad6FhRqChKY9HuTzfYc6mQHprN5jks2Ma8H/paphiopedilum-vietnamense.png",
   "attributes": [
     {
       "trait_type": "Growth Stage",
-      "value": "Dead"
+      "value": "Flowering"
     },
     {
       "trait_type": "Species",
