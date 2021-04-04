@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 
 pragma solidity >=0.6.6 <0.9.0;
-import "hardhat/console.sol";
 
 import "@chainlink/contracts/src/v0.6/VRFConsumerBase.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -23,11 +22,12 @@ contract CryptOrchidERC721 is ERC721PresetMinterPauserAutoId, Ownable, VRFConsum
 
     enum Stage {Unsold, Seed, Flower, Dead}
 
+    bool internal saleStarted = false;
     uint256 public constant MAX_CRYPTORCHIDS = 10000;
     uint256 public constant GROWTH_CYCLE = 10800; // 3 hours
     uint256 public constant WATERING_WINDOW = 3600; // 1 hour
     uint256 internal constant MAX_TIMESTAMP = 2**256 - 1;
-    string internal constant GRANUM_IPFS = "ipfs://QmWd1mn7DuGyx9ByfNeqCsgdSUsJZ1cragitgaygsqDvEm";
+    string internal constant GRANUM_IPFS = "QmWd1mn7DuGyx9ByfNeqCsgdSUsJZ1cragitgaygsqDvEm";
 
     uint16[10] private limits = [0, 3074, 6074, 8074, 9074, 9574, 9824, 9924, 9974, 9999];
     string[10] private genum = [
@@ -78,9 +78,9 @@ contract CryptOrchidERC721 is ERC721PresetMinterPauserAutoId, Ownable, VRFConsum
     address public LinkToken;
 
     event RequestedRandomness(bytes32 requestId);
-    event Planted(uint256 tokenId);
+    event Planted(uint256 tokenId, string latinSpecies, uint256 timestamp, address tokenOwner);
     event Watered(uint256 tokenId, uint256 waterLevel);
-    event Composted(uint256 tokenId);
+    event Killed(uint256 tokenId);
 
     mapping(bytes32 => uint256) public requestToToken;
     mapping(bytes32 => string) private speciesIPFS;
@@ -94,7 +94,7 @@ contract CryptOrchidERC721 is ERC721PresetMinterPauserAutoId, Ownable, VRFConsum
         public
         payable
         VRFConsumerBase(_VRFCoordinator, _LinkToken)
-        ERC721PresetMinterPauserAutoId("CryptOrchids", "ORCHD", "https://arweave.net")
+        ERC721PresetMinterPauserAutoId("CryptOrchids", "ORCHD", "ipfs://")
     {
         VRFCoordinator = _VRFCoordinator;
         LinkToken = _LinkToken;
@@ -149,6 +149,10 @@ contract CryptOrchidERC721 is ERC721PresetMinterPauserAutoId, Ownable, VRFConsum
         }
     }
 
+    function startSale() public onlyOwner {
+        saleStarted = true;
+    }
+
     /**
      * @dev Withdraw ether from this contract (Callable by owner only)
      */
@@ -160,7 +164,8 @@ contract CryptOrchidERC721 is ERC721PresetMinterPauserAutoId, Ownable, VRFConsum
     receive() external payable {}
 
     function webMint(uint256 units) public payable {
-        require(units < MAX_CRYPTORCHIDS - totalSupply(), "Not enough bulbs left");
+        require(saleStarted, "The Nursery is closed");
+        require(units <= MAX_CRYPTORCHIDS - totalSupply(), "Not enough bulbs left");
         require(totalSupply() < MAX_CRYPTORCHIDS, "Sale has already ended");
         require(units > 0 && units <= 20, "You can plant minimum 1, maximum 20 CryptOrchids");
         require(SafeMathChainlink.add(totalSupply(), units) <= MAX_CRYPTORCHIDS, "Exceeds MAX_CRYPTORCHIDS");
@@ -189,9 +194,11 @@ contract CryptOrchidERC721 is ERC721PresetMinterPauserAutoId, Ownable, VRFConsum
     function fulfillRandomness(bytes32 requestId, uint256 randomness) internal override {
         uint256 tokenId = requestToToken[requestId];
         CryptOrchid storage orchid = cryptorchids[tokenId];
-        orchid.species = pickSpecies(SafeMathChainlink.mod(randomness, 10000));
+        string memory species = pickSpecies(SafeMathChainlink.mod(randomness, 10000));
+        orchid.species = species;
         orchid.plantedAt = currentTime();
-        emit Planted(tokenId);
+        address tokenOwner = ownerOf(tokenId);
+        emit Planted(tokenId, species, currentTime(), tokenOwner);
     }
 
     function alive(uint256 tokenId) public view returns (bool) {
@@ -226,7 +233,7 @@ contract CryptOrchidERC721 is ERC721PresetMinterPauserAutoId, Ownable, VRFConsum
         require(_isApprovedOrOwner(_msgSender(), tokenId), "Only the Owner can water a CryptOrchid.");
 
         if (!alive(tokenId)) {
-            burn(tokenId);
+            emit Killed(tokenId);
             return;
         }
 
@@ -237,7 +244,7 @@ contract CryptOrchidERC721 is ERC721PresetMinterPauserAutoId, Ownable, VRFConsum
         uint256 fullCycles = SafeMathChainlink.div(uint256(elapsed), GROWTH_CYCLE);
 
         if (wateringLevel > fullCycles) {
-            burn(tokenId);
+            emit Killed(tokenId);
             return;
         }
 
@@ -251,7 +258,6 @@ contract CryptOrchidERC721 is ERC721PresetMinterPauserAutoId, Ownable, VRFConsum
         require(_isApprovedOrOwner(_msgSender(), tokenId), "Only the Owner can compost a CryptOrchid.");
 
         burn(tokenId);
-        emit Composted(tokenId);
     }
 
     function getTokenMetadata(uint256 tokenId)
@@ -260,10 +266,22 @@ contract CryptOrchidERC721 is ERC721PresetMinterPauserAutoId, Ownable, VRFConsum
         returns (
             string memory,
             uint256,
-            uint256
+            uint256,
+            Stage
         )
     {
-        return (cryptorchids[tokenId].species, cryptorchids[tokenId].plantedAt, cryptorchids[tokenId].waterLevel);
+        return (
+            cryptorchids[tokenId].species,
+            cryptorchids[tokenId].plantedAt,
+            cryptorchids[tokenId].waterLevel,
+            growthStage(tokenId)
+        );
+    }
+
+    function heartbeat(uint256 tokenId) public {
+        if (growthStage(tokenId) == Stage.Dead) {
+            emit Killed(tokenId);
+        }
     }
 
     /**

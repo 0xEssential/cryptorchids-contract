@@ -1,0 +1,11 @@
+
+// description
+
+CryptOrchids are NFT flowers that live on the Ethereum blockchain. CryptOrchids are extremely sensitive and _must_ be watered _exactly_ every 7 days or else they **die**. A dead CryptOrchid cannot be sold on marketplaces like OpenSea.
+
+CryptOrchids start as seeds - seeds don't require watering. You will need to spend a small amount of gas to germinate your seed. Germinating will randomly determine the species and start the watering cycle. You must water your CryptOrchid every 7 days after germination to keep it alive.
+
+
+Only 10,000 CryptOrchids can exist at any time. When a CryptOrchid dies, it can be composted, allowing a new seed to be created and planted.
+
+If you're interested in buying a live CryptOrchid flower on OpenSea, please visit https://cryptorchids.com where you can examine the specimen to determine it's age and watering window - OpenSea cannot display this important information.
