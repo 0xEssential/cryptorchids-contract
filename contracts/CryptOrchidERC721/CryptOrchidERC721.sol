@@ -108,7 +108,7 @@ contract CryptOrchidERC721 is ERC721PresetMinterPauserAutoId, Ownable, VRFConsum
     }
 
     function tokenURI(uint256 tokenId) public view virtual override returns (string memory) {
-        (string memory species, , ) = getTokenMetadata(tokenId);
+        (string memory species, , , ) = getTokenMetadata(tokenId);
 
         if (growthStage(tokenId) == Stage.Seed) {
             return string(abi.encodePacked(baseURI(), GRANUM_IPFS));
