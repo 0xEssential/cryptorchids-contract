@@ -47,6 +47,8 @@ describe('CryptOrchidERC721', function () {
 
     const users = await setupUsers(await getUnnamedAccounts(), contracts);
 
+    await CryptOrchids.startSale();
+
     return {
       ...contracts,
       users,
