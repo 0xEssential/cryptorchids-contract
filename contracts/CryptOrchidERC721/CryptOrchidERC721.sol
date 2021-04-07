@@ -23,9 +23,11 @@ contract CryptOrchidERC721 is ERC721PresetMinterPauserAutoId, Ownable, VRFConsum
     enum Stage {Unsold, Seed, Flower, Dead}
 
     bool internal saleStarted = false;
+    bool internal growingStarted = false;
+
     uint256 public constant MAX_CRYPTORCHIDS = 10000;
-    uint256 public constant GROWTH_CYCLE = 10800; // 3 hours
-    uint256 public constant WATERING_WINDOW = 3600; // 1 hour
+    uint256 public constant GROWTH_CYCLE = 604800; // 7 days
+    uint256 public constant WATERING_WINDOW = 10800; // 3 hours
     uint256 internal constant MAX_TIMESTAMP = 2**256 - 1;
     string internal constant GRANUM_IPFS = "QmWd1mn7DuGyx9ByfNeqCsgdSUsJZ1cragitgaygsqDvEm";
 
@@ -99,7 +101,7 @@ contract CryptOrchidERC721 is ERC721PresetMinterPauserAutoId, Ownable, VRFConsum
         VRFCoordinator = _VRFCoordinator;
         LinkToken = _LinkToken;
         keyHash = _keyhash;
-        vrfFee = 0.1 * 10**18; // 0.1 LINK
+        vrfFee = 2000000000000000000; // 2 LINK
 
         for (uint256 index = 0; index < genum.length; index++) {
             speciesIPFS[keccak256(abi.encode(genum[index]))] = speciesIPFSConstant[index];
@@ -143,14 +145,18 @@ contract CryptOrchidERC721 is ERC721PresetMinterPauserAutoId, Ownable, VRFConsum
         } else if (currentSupply >= 1500) {
             return 80000000000000000; // 1500-3500:  0.08 ETH
         } else if (currentSupply >= 500) {
-            return 40000000000000000; // 500-1500:   0.04 ETH
+            return 60000000000000000; // 500-1500:   0.06 ETH
         } else {
-            return 20000000000000000; // 0 - 500     0.02 ETH
+            return 40000000000000000; // 0 - 500     0.04 ETH
         }
     }
 
     function startSale() public onlyOwner {
         saleStarted = true;
+    }
+
+    function startGrowing() public onlyOwner {
+        growingStarted = true;
     }
 
     /**
@@ -180,12 +186,13 @@ contract CryptOrchidERC721 is ERC721PresetMinterPauserAutoId, Ownable, VRFConsum
     }
 
     function germinate(uint256 tokenId, uint256 userProvidedSeed) public {
+        require(growingStarted, "Germination starts 2021-04-12T16:00:00Z");
         require(_isApprovedOrOwner(_msgSender(), tokenId), "Only the Owner can germinate a CryptOrchid.");
         _requestRandom(tokenId, userProvidedSeed);
     }
 
     function _requestRandom(uint256 tokenId, uint256 userProvidedSeed) internal returns (bytes32 requestId) {
-        require(LINK.balanceOf(address(this)) >= vrfFee, "Not enough LINK - fill contract with faucet");
+        require(LINK.balanceOf(address(this)) >= vrfFee, "Not enough LINK - germination unavailable");
         requestId = requestRandomness(keyHash, vrfFee, userProvidedSeed);
         requestToToken[requestId] = tokenId;
         emit RequestedRandomness(requestId);

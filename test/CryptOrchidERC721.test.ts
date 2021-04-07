@@ -48,6 +48,7 @@ describe('CryptOrchidERC721', function () {
     const users = await setupUsers(await getUnnamedAccounts(), contracts);
 
     await CryptOrchids.startSale();
+    await CryptOrchids.startGrowing();
 
     return {
       ...contracts,
@@ -63,8 +64,8 @@ describe('CryptOrchidERC721', function () {
     account = users[0];
     mockedCoordinator = VRFCoordinatorMock;
 
-    const transaction = await account.CryptOrchidERC721.webMint(units, {
-      value: ethers.utils.parseUnits('0.02', 'ether').mul(units),
+    await account.CryptOrchidERC721.webMint(units, {
+      value: ethers.utils.parseUnits('0.04', 'ether').mul(units),
     });
   };
 
@@ -101,22 +102,22 @@ describe('CryptOrchidERC721', function () {
     expect(await CryptOrchidERC721.totalSupply()).to.equal(0);
   });
 
-  it('Uses 3 hours as the GROWTH_CYCLE', async function () {
+  it('Uses 7 days as the GROWTH_CYCLE', async function () {
     const {CryptOrchidERC721} = await setup();
     const GROWTH_CYCLE = await CryptOrchidERC721.GROWTH_CYCLE();
     const now = new Date();
     const wateringStart = add(now, {seconds: GROWTH_CYCLE.toNumber()});
-    const expectedWateringStart = add(now, {hours: 3});
+    const expectedWateringStart = add(now, {days: 7});
 
     expect(compareAsc(wateringStart, expectedWateringStart)).to.equal(0);
   });
 
-  it('Uses 1 hour as the WATERING_WINDOW', async function () {
+  it('Uses 3 hours as the WATERING_WINDOW', async function () {
     const {CryptOrchidERC721} = await setup();
     const WATERING_WINDOW = await CryptOrchidERC721.WATERING_WINDOW();
     const now = new Date();
     const wateringEnd = add(now, {seconds: WATERING_WINDOW.toNumber()});
-    const expectedWateringEnd = add(now, {hours: 1});
+    const expectedWateringEnd = add(now, {hours: 3});
 
     expect(compareAsc(wateringEnd, expectedWateringEnd)).to.equal(0);
   });
