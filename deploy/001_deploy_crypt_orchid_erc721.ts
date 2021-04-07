@@ -17,7 +17,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const chainLink = chainlinkEnv(networkName);
 
   const {deployer} = await getNamedAccounts();
-
+  console.warn(deployer);
   await deploy('CryptOrchidERC721', {
     from: deployer,
     args: [chainLink.VRF_COORDINATOR, chainLink.LINKTOKEN, chainLink.KEYHASH],
