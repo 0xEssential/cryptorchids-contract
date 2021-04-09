@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import {ethers} from 'hardhat';
 import '@nomiclabs/hardhat-ethers';
-import {address, abi} from '../deployments/rinkeby/CryptOrchidERC721.json';
+import {address, abi} from '../deployments/mainnet/CryptOrchidERC721.json';
 
 async function main() {
   const accounts = await ethers.getSigners();
