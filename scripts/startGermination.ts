@@ -5,14 +5,13 @@ import {address, abi} from '../deployments/mainnet/CryptOrchidERC721.json';
 
 async function main() {
   const accounts = await ethers.getSigners();
-
   const CryptOrchidsContract = await ethers.getContractAt(
     abi,
     address,
     accounts[0]
   );
 
-  const result = await CryptOrchidsContract.withdraw();
+  const result = await CryptOrchidsContract.startGrowing();
 
   console.log(result);
 }
