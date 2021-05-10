@@ -17,8 +17,6 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
   const {address} = deploymentForEnv(networkName);
 
-  console.warn(address);
-
   const {deployer} = await getNamedAccounts();
 
   await deploy('Coupon', {
