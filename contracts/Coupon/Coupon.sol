@@ -8,10 +8,6 @@ import "@chainlink/contracts/src/v0.6/VRFConsumerBase.sol";
 import "../Interfaces/ERC721.sol";
 import "../Libraries/CurrentTime.sol";
 
-// DEBUG
-
-import "hardhat/console.sol";
-
 contract Coupon is Ownable, VRFConsumerBase, CurrentTime {
     using SafeMath for uint256;
     mapping(uint256 => bool) internal redemptions;
@@ -188,9 +184,7 @@ contract Coupon is Ownable, VRFConsumerBase, CurrentTime {
 
     function fulfillRandomness(bytes32 requestId, uint256 randomness) internal override {
         require(requestId == randomWinnerRequestId, "COC:fR:invalid request ID");
-        console.log("fullfill");
         uint256 winnerIndex = SafeMath.mod(randomness, drawingEntriesCount);
-        console.log(winnerIndex);
         winner = drawingEntries[winnerIndex];
     }
 
