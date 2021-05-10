@@ -135,6 +135,8 @@ interface ERC721 {
 
     function flowering(uint256 tokenId) external view returns (bool);
 
+    function currentPrice() external view returns (uint256 price);
+
     function getTokenMetadata(uint256 tokenId)
         external
         view

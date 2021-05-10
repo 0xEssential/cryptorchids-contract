@@ -4,6 +4,10 @@ pragma solidity >=0.6.6 <0.9.0;
 
 import "../Coupon/Coupon.sol";
 
+// DEBUG
+
+import "hardhat/console.sol";
+
 contract CouponMock is Coupon {
     event Redemption(address account, uint256 rebate);
 
@@ -16,7 +20,6 @@ contract CouponMock is Coupon {
     function redeem() public virtual override returns (uint256) {
         uint256 rebateAmount = super.redeem();
         emit Redemption(msg.sender, rebateAmount);
-
         return rebateAmount;
     }
 }

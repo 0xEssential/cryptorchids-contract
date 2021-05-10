@@ -35,6 +35,19 @@ export function chainlinkEnv(networkName: string): Record<string, string> {
   };
 }
 
+export function deploymentForEnv(networkName: string): Record<string, string> {
+  const {
+    abi,
+    address,
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+  } = require(`../deployments/${networkName}/CryptOrchidERC721.json`);
+
+  return {
+    address,
+    abi,
+  };
+}
+
 export function getMnemonic(networkName?: string): string {
   if (networkName) {
     const mnemonic = process.env['MNEMONIC_' + networkName.toUpperCase()];
