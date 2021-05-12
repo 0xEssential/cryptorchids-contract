@@ -89,7 +89,7 @@ contract Coupon is Ownable, VRFConsumerBase, CurrentTime {
 
             if (redemptions[tokenId] != true && flowering && plantedAt > promotionStart) {
                 _eligibleTokens[index] = tokenId;
-                _rebateAmount += currentRebate();
+                _rebateAmount += tokenRebate(tokenId);
                 count += 1;
             }
         }
@@ -137,25 +137,45 @@ contract Coupon is Ownable, VRFConsumerBase, CurrentTime {
                 drawingEntriesCount += 1;
                 addressEntriesCount[msg.sender] += 1;
                 drawingEntries.push(address(msg.sender));
-                pot += currentRebate();
+                pot += tokenRebate(tokenId);
             }
         }
     }
 
-    /** Current rebate amount for eligible token. Based on CryptOrchids current price,
+    /** Current rebate amount for new, mintable token. Based on CryptOrchids current price,
      * the ramping rebate is intended to address the regrettable FOMO ramp pricing.
      * Starts at 0.02ETH, and increases with inverse correlation to price ramp to
      * offer effectively straight 0.04 ETH for seeds.
-     * @dev calls CryptOrchids.currentPrice and finds difference to .
-     * Then transfers caller rebateAmount.
+     * @dev calls CryptOrchids.currentPrice and finds difference with MINT_FLOOR to return rebate.
      */
     function currentRebate() public view returns (uint256) {
-        if (drawingEntriesCount <= 100) return REBATE_AMOUNT;
         uint256 currentPrice = ERC721(cryptorchidsERC721).currentPrice();
 
         if (currentPrice == MINT_FLOOR) return REBATE_AMOUNT;
 
         return currentPrice - MINT_FLOOR;
+    }
+
+    /** Redeemable rebate amount for existing token. Based on the price the token was sold at,
+     * this prevents a seed holder from redeeming a seed for more than it was purchased for.
+     * @dev Copies currentPrice and returns rebate amount for tokenId
+     */
+    function tokenRebate(uint256 tokenId) public view returns (uint256) {
+        if (tokenId > 9900) {
+            return 1000000000000000000 - MINT_FLOOR; // 9900+: 0.960 ETH
+        } else if (tokenId > 9500) {
+            return 640000000000000000 - MINT_FLOOR; // 9500-9500:  0.60 ETH
+        } else if (tokenId > 7500) {
+            return 320000000000000000 - MINT_FLOOR; // 7500-9500:  0.28 ETH
+        } else if (tokenId > 3500) {
+            return 160000000000000000 - MINT_FLOOR; // 3500-7500:  0.12 ETH
+        } else if (tokenId > 1500) {
+            return 80000000000000000 - MINT_FLOOR; // 1500-3500:  0.04 ETH
+        } else if (tokenId > 500) {
+            return 60000000000000000 - MINT_FLOOR; // 500-1500:   0.02 ETH
+        } else {
+            return REBATE_AMOUNT; // 0 - 500     0.02 ETH
+        }
     }
 
     /** Current count of rebates available as determined by safeBalance and currentRebate

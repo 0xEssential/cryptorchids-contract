@@ -1,7 +1,7 @@
 import {HardhatRuntimeEnvironment} from 'hardhat/types';
 import {DeployFunction} from 'hardhat-deploy/types';
 
-import {deploymentForEnv} from '../utils/network';
+import {chainlinkEnv, deploymentForEnv} from '../utils/network';
 
 const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const {deployments, getNamedAccounts, getChainId} = hre;
@@ -16,12 +16,19 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   );
 
   const {address} = deploymentForEnv(networkName);
+  const chainLink = chainlinkEnv(networkName);
 
   const {deployer} = await getNamedAccounts();
 
   await deploy('Coupon', {
     from: deployer,
-    args: [address],
+    args: [
+      address,
+      chainLink.VRF_COORDINATOR,
+      chainLink.LINKTOKEN,
+      chainLink.KEYHASH,
+    ],
+
     log: true,
   });
 };
