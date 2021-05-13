@@ -15,6 +15,8 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
       }[id])
   );
 
+  if (!networkName) return; // no goerli
+
   const {address} = deploymentForEnv(networkName);
   const chainLink = chainlinkEnv(networkName);
 

@@ -1,0 +1,4 @@
+{
+  "inputFilePath": "./contracts/CryptOrchidERC721Child/CryptOrchidERC721Child.sol",
+  "outputDir": "./flat"
+}

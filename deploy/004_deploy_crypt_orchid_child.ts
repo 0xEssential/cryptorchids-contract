@@ -8,23 +8,23 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const networkName = await getChainId().then(
     (id) =>
       ({
-        42: 'kovan',
-        4: 'rinkeby',
-        1: 'mainnet',
+        137: 'matic',
+        80001: 'mumbai',
       }[id])
   );
 
-  if (!networkName) return; // no goerli
+  console.warn(networkName);
 
-  const chainLink = chainlinkEnv(networkName);
+  if (!networkName) return; // ONLY goerli
 
   const {deployer} = await getNamedAccounts();
   console.warn(deployer);
-  await deploy('CryptOrchidERC721', {
+
+  await deploy('CryptOrchidERC721Child', {
     from: deployer,
-    args: [chainLink.VRF_COORDINATOR, chainLink.LINKTOKEN, chainLink.KEYHASH],
+    args: ['0xb5505a6d998549090530911180f38aC5130101c6'],
     log: true,
   });
 };
 export default func;
-func.tags = ['CryptOrchidERC721'];
+func.tags = ['CryptOrchidERC721Child'];
