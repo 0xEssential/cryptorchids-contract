@@ -11,16 +11,16 @@ import "../Libraries/CurrentTime.sol";
 contract Coupon is Ownable, VRFConsumerBase, CurrentTime {
     using SafeMath for uint256;
     mapping(uint256 => bool) internal redemptions;
-    mapping(address => uint256) public addressEntriesCount;
+    // mapping(address => uint256) public addressEntriesCount;
 
-    uint256 public constant PROMOTION_END = 1622520000;
     uint256 internal constant REBATE_AMOUNT = 20000000000000000;
     uint256 internal constant MINT_FLOOR = 40000000000000000;
 
     uint256 public promotionStart;
+    uint256 public promotionEnd;
     address public cryptorchidsERC721;
 
-    uint256 public drawingEntriesCount;
+    // uint256 public drawingEntriesCount;
     uint256 public pot;
     address[] internal drawingEntries;
     bytes32 internal randomWinnerRequestId;
@@ -44,6 +44,7 @@ contract Coupon is Ownable, VRFConsumerBase, CurrentTime {
         vrfFee = 2000000000000000000; // 2 LINK
         cryptorchidsERC721 = cryptorchidsAddress;
         promotionStart = block.timestamp;
+        promotionEnd = 1622520000;
     }
 
     /** Public function for whether the promotion is open. The promotion is only
@@ -53,7 +54,7 @@ contract Coupon is Ownable, VRFConsumerBase, CurrentTime {
      * @return bool Whether promotion is open for entries.
      */
     function promotionOpen() public view returns (bool) {
-        if (currentTime() > PROMOTION_END) return false;
+        if (currentTime() > promotionEnd) return false;
         if (pot > address(this).balance + currentRebate()) return false;
         if (currentRebate() > address(this).balance) return false;
 
@@ -106,7 +107,7 @@ contract Coupon is Ownable, VRFConsumerBase, CurrentTime {
      * Then transfers caller rebateAmount.
      */
     function redeem() public virtual returns (uint256) {
-        require(currentTime() < PROMOTION_END, "Promotion over");
+        require(currentTime() < promotionEnd, "Promotion over");
         (uint256[] memory redeeming, uint256 rebateAmount, ) = checkEligibility();
         require(safeBalance() >= rebateAmount, "COC:rdm:paused");
 
@@ -125,8 +126,8 @@ contract Coupon is Ownable, VRFConsumerBase, CurrentTime {
      * increases pot for each eligible token, while marking each token redeemed.
      */
     function enter() public virtual {
-        require(currentTime() < PROMOTION_END, "Promotion over");
-        (uint256[] memory redeeming, uint256 rebateAmount, uint256 count) = checkEligibility();
+        require(currentTime() < promotionEnd, "Promotion over");
+        (uint256[] memory redeeming, uint256 rebateAmount, ) = checkEligibility();
 
         require(safeBalance() >= rebateAmount, "COC:enr:paused");
 
@@ -134,8 +135,6 @@ contract Coupon is Ownable, VRFConsumerBase, CurrentTime {
             uint256 tokenId = redeeming[index];
             if (tokenId > 0) {
                 redemptions[tokenId] = true;
-                drawingEntriesCount += 1;
-                addressEntriesCount[msg.sender] += 1;
                 drawingEntries.push(address(msg.sender));
                 pot += tokenRebate(tokenId);
             }
@@ -184,18 +183,32 @@ contract Coupon is Ownable, VRFConsumerBase, CurrentTime {
         return SafeMath.div(safeBalance(), currentRebate());
     }
 
-    /** Current rebate amount for eligible token. Based on CryptOrchids current price,
-     * the ramping rebate is intended to address the regrettable FOMO ramp pricing.
-     * Starts at 0.02ETH,
-     * @dev calls CryptOrchids.currentPrice and finds difference to .
-     * Then transfers caller rebateAmount.
+    /** Current amount availble for refund or to be staked in raffle.
      */
     function safeBalance() internal view returns (uint256) {
         return address(this).balance - pot;
     }
 
+    /** Current amount availble for refund or to be staked in raffle.
+     */
+    function drawingEntriesCount() public view returns (uint256) {
+        return drawingEntries.length;
+    }
+
+    /** Current amount availble for refund or to be staked in raffle.
+     */
+    function addressEntriesCount() public view returns (uint256) {
+        uint256 count = 0;
+        for (uint256 index = 0; index < drawingEntries.length; index++) {
+            if (drawingEntries[index] == msg.sender) {
+                count += 1;
+            }
+        }
+        return count;
+    }
+
     function selectWinner(uint256 userProvidedSeed) public virtual {
-        require(currentTime() > PROMOTION_END, "COC:wW:promotion running");
+        require(currentTime() > promotionEnd, "COC:wW:promotion running");
         require(randomWinnerRequestId[0] == 0, "COC:wW:winner requested");
         require(LINK.balanceOf(address(this)) >= vrfFee, "COC:sW:no LINK");
 
@@ -204,7 +217,7 @@ contract Coupon is Ownable, VRFConsumerBase, CurrentTime {
 
     function fulfillRandomness(bytes32 requestId, uint256 randomness) internal override {
         require(requestId == randomWinnerRequestId, "COC:fR:invalid request ID");
-        uint256 winnerIndex = SafeMath.mod(randomness, drawingEntriesCount);
+        uint256 winnerIndex = SafeMath.mod(randomness, drawingEntriesCount());
         winner = drawingEntries[winnerIndex];
     }
 
@@ -212,19 +225,38 @@ contract Coupon is Ownable, VRFConsumerBase, CurrentTime {
      *
      */
     function withdrawWinner() public {
-        require(currentTime() > PROMOTION_END, "COC:wW:promotion running");
+        require(currentTime() > promotionEnd, "COC:wW:promotion running");
         require(msg.sender == winner, "COC:wW:not winner");
-        uint256 txAmount = pot;
+
+        uint256 winnings = pot;
         pot = 0;
-        payable(msg.sender).transfer(txAmount);
+
+        payable(winner).transfer(winnings);
+    }
+
+    /** Owner may reset the promotion to run again.
+     *
+     */
+    function reset(uint256 newPromotionEnd) public onlyOwner {
+        require(currentTime() > promotionEnd, "COC:rst:promotion running");
+        require(pot == 0, "COC:rst:winnings unclaimed");
+
+        delete drawingEntries;
+
+        winnerRequested = false;
+        randomWinnerRequestId = "0";
+        winner = address(0);
+
+        pot = 0;
+        promotionEnd = newPromotionEnd;
     }
 
     /** Withdraw ether from this contract once the promotion is over.
-     * @dev Transfer remaining balance to owner if after PROMOTION_END.
+     * @dev Transfer remaining balance to owner if after promotionEnd.
      *
      */
     function withdrawUnclaimed() public onlyOwner {
-        require(currentTime() > PROMOTION_END, "COC:wU:promotion running");
+        require(currentTime() > promotionEnd, "COC:wU:promotion running");
         require(pot == 0, "COC:wU:winnings unclaimed");
 
         uint256 balance = address(this).balance;

@@ -243,9 +243,7 @@ describe.only('CryptOrchidERC721', function () {
           users: [account],
         } = fixtures;
 
-        const entries = await account.Coupon.addressEntriesCount(
-          account.address
-        );
+        const entries = await account.Coupon.addressEntriesCount();
 
         expect(entries).to.equal(0);
       });
@@ -305,9 +303,7 @@ describe.only('CryptOrchidERC721', function () {
           users: [account],
         } = fixtures;
 
-        const entries = await account.Coupon.addressEntriesCount(
-          account.address
-        );
+        const entries = await account.Coupon.addressEntriesCount();
 
         expect(entries).to.equal(germinateCount);
       });
@@ -365,9 +361,7 @@ describe.only('CryptOrchidERC721', function () {
           users: [account],
         } = fixtures;
 
-        const entries = await account.Coupon.addressEntriesCount(
-          account.address
-        );
+        const entries = await account.Coupon.addressEntriesCount();
 
         expect(entries).to.equal(germinateCount);
       });
@@ -409,9 +403,7 @@ describe.only('CryptOrchidERC721', function () {
             users: [_redeemed, account],
           } = fixtures;
 
-          const entries = await account.Coupon.addressEntriesCount(
-            account.address
-          );
+          const entries = await account.Coupon.addressEntriesCount();
           const pot = await account.Coupon.pot();
 
           expect(entries).to.equal(0);
@@ -448,9 +440,7 @@ describe.only('CryptOrchidERC721', function () {
             users: [redeemed, exceeded, account],
           } = fixtures;
 
-          const entries = await account.Coupon.addressEntriesCount(
-            account.address
-          );
+          const entries = await account.Coupon.addressEntriesCount();
 
           expect(entries).to.equal(1);
         });
