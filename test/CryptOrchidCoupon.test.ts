@@ -12,7 +12,7 @@ const keyhash =
 const numberBetween = (min: number, max: number) =>
   Math.floor(Math.random() * (max - min + 1)) + min;
 
-describe.only('CryptOrchidERC721', function () {
+describe('CryptOrchidERC721', function () {
   describe('Coupon', function () {
     const setup = deployments.createFixture(async () => {
       const [owner] = await ethers.getSigners();
