@@ -36,7 +36,7 @@ describe.only('CryptOrchidERC721', function () {
 
       const CouponContract = await ethers.getContractFactory('CouponMock');
 
-      await link.transfer(CryptOrchids.address, '20000000000000000000');
+      await link.transfer(CryptOrchids.address, '80000000000000000000');
 
       const Coupon = await CouponContract.deploy(
         CryptOrchids.address,
@@ -57,9 +57,9 @@ describe.only('CryptOrchidERC721', function () {
       await CryptOrchids.startGrowing();
 
       const account = users[0];
-      const units = numberBetween(3, 8);
+      const units = 4; //numberBetween(3, 8);
       const tokenIds = await webMint(account, units);
-      const germinateCount = numberBetween(1, 5);
+      const germinateCount = 2; //numberBetween(1, 3);
 
       for (let index = 0; index < germinateCount; index++) {
         await germinate(account, tokenIds[index]);

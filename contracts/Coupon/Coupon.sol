@@ -9,18 +9,16 @@ import "../Interfaces/ERC721.sol";
 import "../Libraries/CurrentTime.sol";
 
 contract Coupon is Ownable, VRFConsumerBase, CurrentTime {
-    using SafeMath for uint256;
     mapping(uint256 => bool) internal redemptions;
-    // mapping(address => uint256) public addressEntriesCount;
 
     uint256 internal constant REBATE_AMOUNT = 20000000000000000;
     uint256 internal constant MINT_FLOOR = 40000000000000000;
+    uint256 public currentRebate;
 
     uint256 public promotionStart;
     uint256 public promotionEnd;
     address public cryptorchidsERC721;
 
-    // uint256 public drawingEntriesCount;
     uint256 public pot;
     address[] internal drawingEntries;
     bytes32 internal randomWinnerRequestId;
@@ -45,6 +43,7 @@ contract Coupon is Ownable, VRFConsumerBase, CurrentTime {
         cryptorchidsERC721 = cryptorchidsAddress;
         promotionStart = block.timestamp;
         promotionEnd = 1622520000;
+        currentRebate = REBATE_AMOUNT;
     }
 
     /** Public function for whether the promotion is open. The promotion is only
@@ -55,8 +54,9 @@ contract Coupon is Ownable, VRFConsumerBase, CurrentTime {
      */
     function promotionOpen() public view returns (bool) {
         if (currentTime() > promotionEnd) return false;
-        if (pot > address(this).balance + currentRebate()) return false;
-        if (currentRebate() > address(this).balance) return false;
+        uint256 balance = address(this).balance;
+        if (pot > balance.add(currentRebate)) return false;
+        if (currentRebate > balance) return false;
 
         return true;
     }
@@ -68,38 +68,28 @@ contract Coupon is Ownable, VRFConsumerBase, CurrentTime {
      * @return eligibleTokens uint256[] Uncompacted array of 0s and eligible token IDs
      * @return rebateAmount uint256 Eligible tokens * currentRebate
      */
-    function checkEligibility()
-        public
-        view
-        returns (
-            uint256[] memory eligibleTokens,
-            uint256 rebateAmount,
-            uint256 count
-        )
-    {
+    function checkEligibility() public view returns (uint256[] memory eligibleTokens, uint256 rebateAmount) {
         require(promotionOpen(), "Promotion over");
 
-        uint256 _rebateAmount = 0;
         uint256 tokenCount = ERC721(cryptorchidsERC721).balanceOf(msg.sender);
-        uint256[] memory _eligibleTokens = new uint256[](tokenCount);
-
+        eligibleTokens = new uint256[](tokenCount);
+        uint256 safeBal = safeBalance();
         for (uint256 index = 0; index < tokenCount; index++) {
             uint256 tokenId = ERC721(cryptorchidsERC721).tokenOfOwnerByIndex(msg.sender, index);
+            if (redemptions[tokenId] == true) continue;
             bool flowering = ERC721(cryptorchidsERC721).flowering(tokenId);
-            (, uint256 plantedAt, , ) = ERC721(cryptorchidsERC721).getTokenMetadata(tokenId);
+            if (!flowering) continue;
 
-            if (redemptions[tokenId] != true && flowering && plantedAt > promotionStart) {
-                _eligibleTokens[index] = tokenId;
-                _rebateAmount += tokenRebate(tokenId);
-                count += 1;
+            (, uint256 plantedAt, , ) = ERC721(cryptorchidsERC721).getTokenMetadata(tokenId);
+            uint256 rebate = tokenRebate(tokenId);
+
+            if (plantedAt > promotionStart && rebateAmount + rebate <= safeBal) {
+                eligibleTokens[index] = tokenId;
+                rebateAmount += rebate;
             }
         }
 
-        if (_rebateAmount > safeBalance()) {
-            uint256[] memory empty = new uint256[](0);
-            return (empty, _rebateAmount, uint256(0));
-        }
-        return (_eligibleTokens, _rebateAmount, count);
+        return (eligibleTokens, rebateAmount);
     }
 
     /** Claim ETH for valid tokens. Check for valid tokens before claming.
@@ -107,13 +97,25 @@ contract Coupon is Ownable, VRFConsumerBase, CurrentTime {
      * Then transfers caller rebateAmount.
      */
     function redeem() public virtual returns (uint256) {
-        require(currentTime() < promotionEnd, "Promotion over");
-        (uint256[] memory redeeming, uint256 rebateAmount, ) = checkEligibility();
-        require(safeBalance() >= rebateAmount, "COC:rdm:paused");
+        uint256 tokenCount = ERC721(cryptorchidsERC721).balanceOf(msg.sender);
+        uint256 safeBal = safeBalance();
+        uint256 rebateAmount = 0;
 
-        for (uint256 index = 0; index < redeeming.length - 1; index++) {
-            uint256 tokenId = redeeming[index];
-            if (tokenId > 0) redemptions[tokenId] = true;
+        for (uint256 index = 0; index < tokenCount; index++) {
+            uint256 tokenId = ERC721(cryptorchidsERC721).tokenOfOwnerByIndex(msg.sender, index);
+            if (redemptions[tokenId] == true) continue;
+
+            uint256 rebate = tokenRebate(tokenId);
+            if (rebateAmount + rebate > safeBal) break;
+
+            bool flowering = ERC721(cryptorchidsERC721).flowering(tokenId);
+            if (!flowering) continue;
+
+            (, uint256 plantedAt, , ) = ERC721(cryptorchidsERC721).getTokenMetadata(tokenId);
+            if (plantedAt < promotionStart) continue;
+
+            rebateAmount += rebate;
+            redemptions[tokenId] = true;
         }
 
         payable(msg.sender).transfer(rebateAmount);
@@ -126,19 +128,29 @@ contract Coupon is Ownable, VRFConsumerBase, CurrentTime {
      * increases pot for each eligible token, while marking each token redeemed.
      */
     function enter() public virtual {
-        require(currentTime() < promotionEnd, "Promotion over");
-        (uint256[] memory redeeming, uint256 rebateAmount, ) = checkEligibility();
+        uint256 tokenCount = ERC721(cryptorchidsERC721).balanceOf(msg.sender);
+        uint256 safeBal = safeBalance();
+        uint256 rebateAmount = 0;
 
-        require(safeBalance() >= rebateAmount, "COC:enr:paused");
+        for (uint256 index = 0; index < tokenCount; index++) {
+            uint256 tokenId = ERC721(cryptorchidsERC721).tokenOfOwnerByIndex(msg.sender, index);
+            if (redemptions[tokenId] == true) continue;
 
-        for (uint256 index = 0; index < redeeming.length; index++) {
-            uint256 tokenId = redeeming[index];
-            if (tokenId > 0) {
-                redemptions[tokenId] = true;
-                drawingEntries.push(address(msg.sender));
-                pot += tokenRebate(tokenId);
-            }
+            uint256 rebate = tokenRebate(tokenId);
+            if (rebateAmount + rebate > safeBal) break;
+
+            bool flowering = ERC721(cryptorchidsERC721).flowering(tokenId);
+            if (!flowering) continue;
+
+            (, uint256 plantedAt, , ) = ERC721(cryptorchidsERC721).getTokenMetadata(tokenId);
+            if (plantedAt < promotionStart) continue;
+
+            rebateAmount += rebate;
+            redemptions[tokenId] = true;
+            drawingEntries.push(msg.sender);
         }
+
+        pot += rebateAmount;
     }
 
     /** Current rebate amount for new, mintable token. Based on CryptOrchids current price,
@@ -147,19 +159,22 @@ contract Coupon is Ownable, VRFConsumerBase, CurrentTime {
      * offer effectively straight 0.04 ETH for seeds.
      * @dev calls CryptOrchids.currentPrice and finds difference with MINT_FLOOR to return rebate.
      */
-    function currentRebate() public view returns (uint256) {
+    function setCurrentRebate() public {
         uint256 currentPrice = ERC721(cryptorchidsERC721).currentPrice();
 
-        if (currentPrice == MINT_FLOOR) return REBATE_AMOUNT;
+        if (currentPrice == MINT_FLOOR) {
+            currentRebate = REBATE_AMOUNT;
+            return;
+        }
 
-        return currentPrice - MINT_FLOOR;
+        currentRebate = currentPrice - MINT_FLOOR;
     }
 
     /** Redeemable rebate amount for existing token. Based on the price the token was sold at,
      * this prevents a seed holder from redeeming a seed for more than it was purchased for.
      * @dev Copies currentPrice and returns rebate amount for tokenId
      */
-    function tokenRebate(uint256 tokenId) public view returns (uint256) {
+    function tokenRebate(uint256 tokenId) public pure returns (uint256) {
         if (tokenId > 9900) {
             return 1000000000000000000 - MINT_FLOOR; // 9900+: 0.960 ETH
         } else if (tokenId > 9500) {
@@ -180,13 +195,13 @@ contract Coupon is Ownable, VRFConsumerBase, CurrentTime {
     /** Current count of rebates available as determined by safeBalance and currentRebate
      */
     function rebatesAvailable() public view returns (uint256) {
-        return SafeMath.div(safeBalance(), currentRebate());
+        return SafeMath.div(safeBalance(), currentRebate);
     }
 
     /** Current amount availble for refund or to be staked in raffle.
      */
     function safeBalance() internal view returns (uint256) {
-        return address(this).balance - pot;
+        return (address(this).balance).sub(pot);
     }
 
     /** Current amount availble for refund or to be staked in raffle.
