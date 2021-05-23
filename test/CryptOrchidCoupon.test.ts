@@ -2,7 +2,6 @@ import chai, {expect} from './chai-setup';
 import {chunk} from 'lodash';
 import {ethers, deployments, getUnnamedAccounts} from 'hardhat';
 import {setupUsers} from './utils';
-import {add, compareAsc} from 'date-fns';
 import {BigNumber, Contract} from 'ethers';
 import {SignerWithAddress} from 'hardhat-deploy-ethers/dist/src/signer-with-address';
 
@@ -12,7 +11,7 @@ const keyhash =
 const numberBetween = (min: number, max: number) =>
   Math.floor(Math.random() * (max - min + 1)) + min;
 
-describe('CryptOrchidERC721', function () {
+describe.only('CryptOrchidERC721', function () {
   describe('Coupon', function () {
     const setup = deployments.createFixture(async () => {
       const [owner] = await ethers.getSigners();
@@ -218,12 +217,7 @@ describe('CryptOrchidERC721', function () {
           users: [account],
         } = fixtures;
 
-        const tx = await account.Coupon.redeem();
-        const receipt = await tx.wait();
-
-        expect(receipt.events[0].args.rebate).to.equal(
-          ethers.utils.parseEther('0')
-        );
+        expect(account.Coupon.redeem()).to.be.reverted;
       });
 
       it('does not increment the pot for redeemed tokens', async () => {
@@ -332,12 +326,7 @@ describe('CryptOrchidERC721', function () {
           users: [account],
         } = fixtures;
 
-        const tx = await account.Coupon.redeem();
-        const receipt = await tx.wait();
-
-        expect(receipt.events[0].args.rebate).to.equal(
-          ethers.utils.parseEther('0')
-        );
+        expect(account.Coupon.redeem()).to.be.reverted;
       });
 
       it('does not increment the pot for redeemed tokens', async () => {
@@ -381,7 +370,7 @@ describe('CryptOrchidERC721', function () {
 
           await tx.wait();
 
-          // 1 entry remaining
+          // 1 entry remaining, second account has 2
           await fixtures.users[0].Coupon.enter();
         });
         it('does not increment the pot beyond safeBalance', async () => {
@@ -389,11 +378,11 @@ describe('CryptOrchidERC721', function () {
             germinateCount,
             users: [_redeemed, account],
           } = fixtures;
-
-          expect(async () => await account.Coupon.enter()).to.throw;
+          await account.Coupon.enter();
           const pot = await account.Coupon.pot();
+
           expect(pot).to.equal(
-            ethers.utils.parseEther('0.02').mul(germinateCount)
+            ethers.utils.parseEther('0.02').mul(germinateCount + 1)
           );
         });
 
@@ -406,9 +395,9 @@ describe('CryptOrchidERC721', function () {
           const entries = await account.Coupon.addressEntriesCount();
           const pot = await account.Coupon.pot();
 
-          expect(entries).to.equal(0);
+          expect(entries).to.equal(1);
           expect(pot).to.equal(
-            ethers.utils.parseEther('0.02').mul(germinateCount)
+            ethers.utils.parseEther('0.02').mul(germinateCount + 1)
           );
         });
 
@@ -417,10 +406,10 @@ describe('CryptOrchidERC721', function () {
             users: [_redeemed, account],
           } = fixtures;
 
-          expect(async () => await account.Coupon.redeem()).to.throw;
+          expect(account.Coupon.redeem()).to.be.reverted;
         });
 
-        it('increments the pot if addition would exhaust safeBalance', async () => {
+        it('does not increment the pot if addition would exhaust safeBalance', async () => {
           const {
             germinateCount,
             users: [redeemed, exceeded, account],
@@ -435,14 +424,14 @@ describe('CryptOrchidERC721', function () {
           );
         });
 
-        it('adds entry that exhausts safeBalance', async () => {
+        it('does not add entry that exhausts safeBalance', async () => {
           const {
             users: [redeemed, exceeded, account],
           } = fixtures;
 
           const entries = await account.Coupon.addressEntriesCount();
 
-          expect(entries).to.equal(1);
+          expect(entries).to.equal(0);
         });
       });
 
@@ -451,15 +440,19 @@ describe('CryptOrchidERC721', function () {
           fixtures = await setup();
           const tx = await fixtures.owner.sendTransaction({
             to: fixtures.Coupon.address,
-            value: ethers.utils.parseEther('0.02').mul(fixtures.germinateCount),
+            value: ethers.utils
+              .parseEther('0.02')
+              .mul(fixtures.germinateCount + 1),
           });
 
           await tx.wait();
+
+          // 1 entry remaining, second account has 2
+          await fixtures.users[0].Coupon.enter();
         });
         it('reports the right eligibility for exhausting contract', async () => {
           const {
-            users: [account],
-            germinateCount,
+            users: [_redeemed, account],
           } = fixtures;
 
           const {
@@ -472,32 +465,29 @@ describe('CryptOrchidERC721', function () {
             []
           );
 
-          expect(eligibleIds.length).to.equal(germinateCount);
-          expect(rebateAmount).to.equal(
-            ethers.utils.parseEther('0.02').mul(germinateCount)
-          );
+          expect(eligibleIds.length).to.equal(1);
+          expect(rebateAmount).to.equal(ethers.utils.parseEther('0.02'));
         });
 
         it('redeems the right eth for exhausting contract', async () => {
           const {
-            germinateCount,
-            users: [account],
+            users: [_redeemed, account],
           } = fixtures;
 
           const tx = await account.Coupon.redeem();
           const receipt = await tx.wait();
 
           expect(receipt.events[0].args.rebate).to.equal(
-            ethers.utils.parseEther('0.02').mul(germinateCount)
+            ethers.utils.parseEther('0.02')
           );
         });
 
         it('redeems no eth beyond safeBalance', async () => {
           const {
-            users: [_redeemed, account],
+            users: [_redeemed, _redeemedAlso, account],
           } = fixtures;
 
-          expect(async () => await account.Coupon.redeem()).to.throw;
+          expect(account.Coupon.redeem()).to.be.reverted;
         });
       });
     });
@@ -521,7 +511,7 @@ describe('CryptOrchidERC721', function () {
           users: [account],
         } = fixtures;
 
-        expect(async () => account.Coupon.selectWinner(42)).to.throw;
+        expect(account.Coupon.selectWinner(42)).to.be.reverted;
       });
 
       it('prevents winner selection without LINK', async () => {
@@ -532,7 +522,7 @@ describe('CryptOrchidERC721', function () {
 
         await Coupon.timeTravel(new Date(2021, 5, 1).getTime() - Date.now());
 
-        expect(async () => account.Coupon.selectWinner(42)).to.throw;
+        expect(account.Coupon.selectWinner(42)).to.be.reverted;
       });
 
       it('allows winner selection after promotionEnd with LINK', async () => {
@@ -559,7 +549,7 @@ describe('CryptOrchidERC721', function () {
         } = fixtures;
 
         await link.transfer(Coupon.address, '2000000000000000000');
-        expect(async () => account.Coupon.selectWinner(42)).to.throw;
+        expect(account.Coupon.selectWinner(42)).to.be.reverted;
       });
 
       it('sets a winner', async () => {
@@ -587,7 +577,15 @@ describe('CryptOrchidERC721', function () {
           users: [winner, nonWinner],
         } = fixtures;
 
-        expect(async () => await nonWinner.Coupon.withdrawWinner()).to.throw;
+        expect(nonWinner.Coupon.withdrawWinner()).to.be.reverted;
+      });
+
+      it('prevents owner from withdrawing before winner', async () => {
+        const {Coupon, owner} = fixtures;
+
+        const contractOwner = Coupon.connect(owner);
+
+        expect(contractOwner.withdrawWinner()).to.be.reverted;
       });
 
       it('allows winner to withdraw', async () => {
@@ -596,11 +594,82 @@ describe('CryptOrchidERC721', function () {
         } = fixtures;
 
         const tx = await winner.Coupon.withdrawWinner();
-        const receipt = await tx.wait();
-        console.warn(receipt);
+        await tx.wait();
+
         const pot = await winner.Coupon.pot();
 
         expect(pot).to.equal(0);
+      });
+
+      it('allows owner to withdraw extra funds', async () => {
+        const {Coupon, owner} = fixtures;
+
+        const contractOwner = Coupon.connect(owner);
+        const tx = await contractOwner.withdrawUnclaimed();
+        await tx.wait();
+
+        const balance = await owner.provider.getBalance(Coupon.address);
+
+        expect(balance).to.equal(BigNumber.from(0));
+      });
+
+      it('allows owner to reset', async () => {
+        const {Coupon, owner} = fixtures;
+
+        const newPromotionEnd = new Date(2021, 6, 1).getTime();
+        const contractOwner = Coupon.connect(owner);
+        await contractOwner.reset(newPromotionEnd);
+
+        await owner.sendTransaction({
+          to: Coupon.address,
+          value: ethers.utils.parseEther('2.0'),
+        });
+
+        const open = await contractOwner.promotionOpen();
+        const pot = await contractOwner.pot();
+
+        expect(open).to.equal(true);
+        expect(pot).to.equal(0);
+      });
+
+      // tokens don't reset - the internal `redemptions` mapping remains intact
+      it('redeems no eth for redeemed tokens', async () => {
+        const {
+          users: [account],
+        } = fixtures;
+
+        expect(account.Coupon.redeem()).to.be.reverted;
+      });
+
+      it('redeems eth for unredeemed tokens', async () => {
+        const {
+          users: [_re, _deemed, account],
+        } = fixtures;
+
+        const tx = await account.Coupon.redeem();
+        const receipt = await tx.wait();
+
+        expect(receipt.events[0].args.rebate).to.equal(
+          ethers.utils.parseEther('0.02')
+        );
+      });
+
+      it('allows a second winner selection after promotionEnd with LINK', async () => {
+        const {
+          users: [account],
+          Coupon,
+          link,
+        } = fixtures;
+        await Coupon.timeTravel(
+          new Date(2021, 7, 2).getTime() * 1000 - new Date().getTime() * 1000
+        );
+        await link.transfer(Coupon.address, '2000000000000000000');
+
+        const tx = await account.Coupon.selectWinner(42);
+
+        const receipt = await tx.wait();
+        requestId = receipt.events[3].args.requestId;
+        expect(requestId).to.not.be.null;
       });
     });
   });

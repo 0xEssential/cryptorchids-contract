@@ -19,7 +19,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const chainLink = chainlinkEnv(networkName);
 
   const {deployer} = await getNamedAccounts();
-
+  console.warn(address);
   await deploy('Coupon', {
     from: deployer,
     args: [

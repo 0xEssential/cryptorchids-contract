@@ -69,8 +69,6 @@ contract Coupon is Ownable, VRFConsumerBase, CurrentTime {
      * @return rebateAmount uint256 Eligible tokens * currentRebate
      */
     function checkEligibility() public view returns (uint256[] memory eligibleTokens, uint256 rebateAmount) {
-        require(promotionOpen(), "Promotion over");
-
         uint256 tokenCount = ERC721(cryptorchidsERC721).balanceOf(msg.sender);
         eligibleTokens = new uint256[](tokenCount);
         uint256 safeBal = safeBalance();
@@ -118,6 +116,7 @@ contract Coupon is Ownable, VRFConsumerBase, CurrentTime {
             redemptions[tokenId] = true;
         }
 
+        require(rebateAmount > 0, "Unpayable");
         payable(msg.sender).transfer(rebateAmount);
 
         return rebateAmount;
@@ -259,7 +258,7 @@ contract Coupon is Ownable, VRFConsumerBase, CurrentTime {
         delete drawingEntries;
 
         winnerRequested = false;
-        randomWinnerRequestId = "0";
+        randomWinnerRequestId = bytes32(0);
         winner = address(0);
 
         pot = 0;
@@ -274,8 +273,7 @@ contract Coupon is Ownable, VRFConsumerBase, CurrentTime {
         require(currentTime() > promotionEnd, "COC:wU:promotion running");
         require(pot == 0, "COC:wU:winnings unclaimed");
 
-        uint256 balance = address(this).balance;
-        payable(msg.sender).transfer(balance);
+        payable(msg.sender).transfer(address(this).balance);
     }
 
     receive() external payable {}
