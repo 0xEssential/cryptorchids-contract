@@ -7,13 +7,15 @@ import {AccessControlMixin} from "../Libraries/matic/common/AccessControlMixin.s
 import {IChildToken} from "../Libraries/matic/child/ChildToken/IChildToken.sol";
 import {NativeMetaTransaction} from "../Libraries/matic/common/NativeMetaTransaction.sol";
 import {ContextMixin} from "../Libraries/matic/common/ContextMixin.sol";
+import {FxBaseChildTunnel} from "../Libraries/tunnel/FxBaseChildTunnel.sol";
 
 contract CryptOrchidERC721Child is
     CryptOrchidGoerli,
     IChildToken,
     AccessControlMixin,
     NativeMetaTransaction,
-    ContextMixin
+    ContextMixin,
+    FxBaseChildTunnel
 {
     bytes32 public constant DEPOSITOR_ROLE = keccak256("DEPOSITOR_ROLE");
 
@@ -23,7 +25,7 @@ contract CryptOrchidERC721Child is
     event WithdrawnBatch(address indexed user, uint256[] tokenIds);
     event TransferWithMetadata(address indexed from, address indexed to, uint256 indexed tokenId, bytes metaData);
 
-    constructor(address childChainManager) public CryptOrchidGoerli() {
+    constructor(address childChainManager, address _fxChild) public CryptOrchidGoerli() FxBaseChildTunnel(_fxChild) {
         _setupContractId("CryptOrchidERC721Child");
         _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
         _setupRole(DEPOSITOR_ROLE, childChainManager);
@@ -120,5 +122,21 @@ contract CryptOrchidERC721Child is
         // and pack more data in byte array which can be decoded back
         // in L1
         return abi.encode(tokenURI(tokenId));
+    }
+
+    function _processMessageFromRoot(
+        uint256 stateId,
+        address sender,
+        bytes memory data
+    ) internal override validateSender(sender) {
+        (string memory species, uint256 plantedAt, uint256 waterLevel, uint256 tokenId) = abi.decode(
+            data,
+            (string, uint256, uint256, uint256)
+        );
+        cryptorchids[tokenId] = CryptOrchid({species: species, plantedAt: plantedAt, waterLevel: waterLevel});
+    }
+
+    function sendMessageToRoot(bytes memory message) public {
+        _sendMessageToRoot(message);
     }
 }

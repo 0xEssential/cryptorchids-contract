@@ -14,7 +14,7 @@ const config: HardhatUserConfig = {
     settings: {
       optimizer: {
         enabled: true,
-        runs: 1000,
+        runs: 200,
       },
     },
   },
@@ -58,6 +58,7 @@ const config: HardhatUserConfig = {
     goerli: {
       url: node_url('goerli'),
       accounts: accounts('goerli'),
+      timeout: 60000,
     },
     matic: {
       url: 'https://rpc-mumbai.maticvigil.com',
