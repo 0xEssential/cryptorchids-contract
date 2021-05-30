@@ -10,12 +10,13 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     (id) =>
       ({
         42: 'kovan',
+        5: 'goerli',
         4: 'rinkeby',
         1: 'mainnet',
       }[id])
   );
 
-  if (!networkName) return; // no goerli
+  if (!networkName) return;
 
   const {address} = deploymentForEnv(networkName);
   const chainLink = chainlinkEnv(networkName);

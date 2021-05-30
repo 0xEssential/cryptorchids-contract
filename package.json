@@ -81,7 +81,6 @@
   "dependencies": {
     "@chainlink/contracts": "^0.1.6",
     "@nomiclabs/hardhat-ethers": "^2.0.2",
-    "@poanet/solidity-flattener": "^3.0.6",
     "arweave": "^1.10.13",
     "glob": "^7.1.6",
     "graphql": "^15.5.0",

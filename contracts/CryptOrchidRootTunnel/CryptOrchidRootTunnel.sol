@@ -15,6 +15,13 @@ interface CryptOrchidParent {
             uint256,
             Stage
         );
+
+    /// @notice Find the owner of an NFT
+    /// @dev NFTs assigned to zero address are considered invalid, and queries
+    ///  about them do throw.
+    /// @param _tokenId The identifier for an NFT
+    /// @return The address of the owner of the NFT
+    function ownerOf(uint256 _tokenId) external view returns (address);
 }
 
 /**
@@ -32,6 +39,8 @@ contract CryptOrchidRootTunnel is FxBaseRootTunnel {
         CryptOrchidERC721 = _CryptOrchidERC721;
     }
 
+    // TODO: can we do a L2 => L1 => L2 as part of deposit?
+    // deposit => send token ID to tunnel root => fetch metadata from ERC721 => send metadata to child
     function _processMessageFromChild(bytes memory data) internal override {
         latestData = data;
         uint256 tokenId = abi.decode(data, (uint256));
@@ -39,14 +48,15 @@ contract CryptOrchidRootTunnel is FxBaseRootTunnel {
     }
 
     function sendMessageToChild(uint256 tokenId) public {
-        // TODO:
-        // 1. check owner?
+        try CryptOrchidParent(CryptOrchidERC721).ownerOf(tokenId) returns (address owner) {
+            if (owner == msg.sender) {
+                (string memory species, uint256 plantedAt, uint256 waterLevel, ) = CryptOrchidParent(CryptOrchidERC721)
+                    .getTokenMetadata(tokenId);
 
-        (string memory species, uint256 plantedAt, uint256 waterLevel, ) = CryptOrchidParent(CryptOrchidERC721)
-            .getTokenMetadata(tokenId);
+                bytes memory message = abi.encode(species, plantedAt, waterLevel, tokenId);
 
-        bytes memory message = abi.encode(species, plantedAt, waterLevel, tokenId);
-
-        _sendMessageToChild(message);
+                _sendMessageToChild(message);
+            }
+        } catch {} // solhint-disable-line no-empty-blocks
     }
 }

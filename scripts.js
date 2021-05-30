@@ -38,9 +38,7 @@ program
   .description('deploy to network')
   .action(async (network, extra) => {
     await execute(
-      `hardhat --network ${network} deploy --reset ${
-        extra ? extra.join(' ') : ''
-      }`
+      `hardhat --network ${network} deploy ${extra ? extra.join(' ') : ''}`
     );
   });
 
