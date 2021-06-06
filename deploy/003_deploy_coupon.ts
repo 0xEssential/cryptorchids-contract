@@ -1,6 +1,7 @@
 import {HardhatRuntimeEnvironment} from 'hardhat/types';
 import {DeployFunction} from 'hardhat-deploy/types';
-import {chainlinkEnv} from '../utils/network';
+
+import {chainlinkEnv, deploymentForEnv} from '../utils/network';
 
 const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const {deployments, getNamedAccounts, getChainId} = hre;
@@ -9,22 +10,30 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     (id) =>
       ({
         42: 'kovan',
+        5: 'goerli',
         4: 'rinkeby',
-        // 1: 'mainnet',
+        1: 'mainnet',
       }[id])
   );
 
-  if (!networkName) return; // no goerli
+  if (!networkName) return;
 
+  const {address} = deploymentForEnv(networkName);
   const chainLink = chainlinkEnv(networkName);
 
   const {deployer} = await getNamedAccounts();
-  console.warn(deployer);
-  // await deploy('CryptOrchidERC721', {
-  //   from: deployer,
-  //   args: [chainLink.VRF_COORDINATOR, chainLink.LINKTOKEN, chainLink.KEYHASH],
-  //   log: true,
-  // });
+  console.warn(address);
+  await deploy('Coupon', {
+    from: deployer,
+    args: [
+      address,
+      chainLink.VRF_COORDINATOR,
+      chainLink.LINKTOKEN,
+      chainLink.KEYHASH,
+    ],
+
+    log: true,
+  });
 };
 export default func;
-func.tags = ['CryptOrchidERC721'];
+func.tags = ['CryptOrchidsCoupon'];

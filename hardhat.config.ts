@@ -14,7 +14,7 @@ const config: HardhatUserConfig = {
     settings: {
       optimizer: {
         enabled: true,
-        runs: 1000,
+        runs: 200,
       },
     },
   },
@@ -54,6 +54,20 @@ const config: HardhatUserConfig = {
     kovan: {
       url: node_url('kovan'),
       accounts: accounts('kovan'),
+    },
+    goerli: {
+      url: node_url('goerli'),
+      accounts: accounts('goerli'),
+      timeout: 60000,
+    },
+    matic: {
+      url: 'https://rpc-mumbai.maticvigil.com',
+      accounts: accounts('matic'),
+    },
+    mumbai: {
+      url: 'https://rpc-mumbai.maticvigil.com',
+      accounts: accounts('mumbai'),
+      chainId: 80001,
     },
     staging: {
       url: node_url('kovan'),

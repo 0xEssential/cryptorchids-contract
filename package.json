@@ -87,8 +87,5 @@
     "graphql-request": "^3.4.0",
     "node-fetch": "2.6.1",
     "yargs-parser": "^20.2.7"
-  },
-  "engines": {
-    "node": "14"
   }
 }
