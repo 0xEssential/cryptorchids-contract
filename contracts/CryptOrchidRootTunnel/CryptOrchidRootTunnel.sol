@@ -39,12 +39,9 @@ contract CryptOrchidRootTunnel is FxBaseRootTunnel {
         CryptOrchidERC721 = _CryptOrchidERC721;
     }
 
-    // TODO: can we do a L2 => L1 => L2 as part of deposit?
-    // deposit => send token ID to tunnel root => fetch metadata from ERC721 => send metadata to child
+    // Effectively a no-op, FXBaseRootTunnel requires that we implement this
     function _processMessageFromChild(bytes memory data) internal override {
         latestData = data;
-        uint256 tokenId = abi.decode(data, (uint256));
-        sendMessageToChild(tokenId);
     }
 
     function sendMessageToChild(uint256 tokenId) public {

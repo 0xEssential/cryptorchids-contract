@@ -36,6 +36,18 @@ export function chainlinkEnv(networkName: string): Record<string, string> {
 }
 
 export function deploymentForEnv(networkName: string): Record<string, string> {
+  if (networkName == 'goerli') {
+    const {
+      abi,
+      address,
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+    } = require(`../deployments/${networkName}/CryptOrchidGoerli.json`);
+
+    return {
+      address,
+      abi,
+    };
+  }
   const {
     abi,
     address,

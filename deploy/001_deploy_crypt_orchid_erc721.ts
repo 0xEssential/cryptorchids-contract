@@ -10,7 +10,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
       ({
         42: 'kovan',
         4: 'rinkeby',
-        1: 'mainnet',
+        // 1: 'mainnet',
       }[id])
   );
 
