@@ -20,11 +20,11 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
   const {deployer} = await getNamedAccounts();
   console.warn(deployer);
-  await deploy('CryptOrchidERC721', {
-    from: deployer,
-    args: [chainLink.VRF_COORDINATOR, chainLink.LINKTOKEN, chainLink.KEYHASH],
-    log: true,
-  });
+  // await deploy('CryptOrchidERC721', {
+  //   from: deployer,
+  //   args: [chainLink.VRF_COORDINATOR, chainLink.LINKTOKEN, chainLink.KEYHASH],
+  //   log: true,
+  // });
 };
 export default func;
 func.tags = ['CryptOrchidERC721'];
